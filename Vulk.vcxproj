@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Dev\VulkanSDK\1.4.309.0\Include;C:\Dev\GLFW\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Dev\VulkanSDK\1.4.309.0\Lib;C:\Dev\GLFW\build\src\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.4.309.0\Include;C:\glfw\glfw-3.4\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\VulkanSDK\1.4.309.0\Lib;C:\glfw\glfw-3.4\src\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Dev\VulkanSDK\1.4.309.0\Include;C:\Dev\GLFW\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Dev\VulkanSDK\1.4.309.0\Lib;C:\Dev\GLFW\build\src\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.4.309.0\Include;C:\glfw\glfw-3.4\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\VulkanSDK\1.4.309.0\Lib;C:\glfw\glfw-3.4\src\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
