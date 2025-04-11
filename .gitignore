@@ -1,0 +1,13 @@
+/Vulk.vcxproj.user
+.vs/
+*.obj
+*.idb
+*.pdb
+*.exe*
+*.ilk
+*.log
+*.tlog
+*.lastbuildstate
+*.iobj
+*.ipdb
+*.props
