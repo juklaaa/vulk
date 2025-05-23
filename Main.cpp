@@ -20,6 +20,7 @@
 #include <fstream>
 #include <chrono>
 #include <array>
+#include <unordered_map>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -28,8 +29,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-
-
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 
 const uint32_t WIDTH = 800;
@@ -130,7 +131,25 @@ struct Vertex {
 
 		return attributeDescriptions;
 	}
+
+	bool operator==(const Vertex& other) const 
+	{
+		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+	}
 };
+
+namespace std 
+{
+	template<> struct hash<Vertex> 
+	{
+		size_t operator()(Vertex const& vertex) const 
+		{
+			return ((hash<glm::vec3>()(vertex.pos) ^
+				(hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+				(hash<glm::vec2>()(vertex.texCoord) << 1);
+		}
+	};
+}
 
 struct UniformBufferObject 
 {
@@ -1149,8 +1168,12 @@ private:
 
 				vertex.color = { 1.0f, 1.0f, 1.0f };
 
-				vertices.push_back(vertex);
-				indices.push_back(indices.size());
+				if (uniqueVertices.count(vertex) == 0) {
+					uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+					vertices.push_back(vertex);
+				}
+
+				indices.push_back(uniqueVertices[vertex]);
 			}
 		}
 	}
@@ -1809,6 +1832,8 @@ private:
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
+
+	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 };
 
 int main()
