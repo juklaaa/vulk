@@ -1501,7 +1501,7 @@ void Renderer::waitUntilDone()
 	vkDeviceWaitIdle(device);
 }
 
-void Renderer::drawFrame()
+void Renderer::drawFrame(bool framebufferResized)
 {
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 	uint32_t imageIndex = 0;

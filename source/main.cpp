@@ -55,7 +55,7 @@ private:
 		while (!glfwWindowShouldClose(window))
 		{
 			glfwPollEvents();
-			renderer.drawFrame();
+			renderer.drawFrame(framebufferResized);
 		}
 
 		renderer.waitUntilDone();

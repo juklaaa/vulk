@@ -146,7 +146,7 @@ public:
 	void createCommandBuffers();
 	void createSyncObjects();
 	void waitUntilDone();
-	void drawFrame();
+	void drawFrame(bool framebufferResized);
 	void recreateSwapChain();
 	void updateUniformBuffer(uint32_t currentImage);
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -175,6 +175,7 @@ public:
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
+
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
@@ -185,7 +186,6 @@ public:
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 	uint32_t currentFrame = 0;
-	bool framebufferResized = false;
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
