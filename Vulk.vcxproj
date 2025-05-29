@@ -90,10 +90,12 @@
   <ItemGroup>
     <ClInclude Include="source\common.h" />
     <ClInclude Include="source\rendering\renderer.h" />
+    <ClInclude Include="source\rendering\renderer_impl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\rendering\renderer.cpp" />
+    <ClCompile Include="source\rendering\renderer_impl.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

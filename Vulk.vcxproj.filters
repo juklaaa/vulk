@@ -17,12 +17,18 @@
     <ClInclude Include="source\rendering\renderer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="source\rendering\renderer_impl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\rendering\renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rendering\renderer_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
