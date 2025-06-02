@@ -83,7 +83,7 @@ public:
 
 	void init(GLFWwindow* window);
 	void deinit();
-	void drawFrame(bool framebufferResized);
+	void drawFrame(bool framebufferResized, bool isPPLightingEnabled);
 	void waitUntilDone();
 
 private:
@@ -130,4 +130,5 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 	uint32_t mipLevels;
+	bool isPPLightingEnabled = true;
 };

@@ -36,12 +36,22 @@ private:
 		window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 		glfwSetWindowUserPointer(window, this);
 		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+		glfwSetKeyCallback(window, keyCallback);
 	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 	{
 		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 		app->framebufferResized = true;
+	}
+
+	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+		{
+			app->isPPLightingEnabled = !app->isPPLightingEnabled;
+		}
 	}
 
 	void deinitWindow()
@@ -55,15 +65,16 @@ private:
 		while (!glfwWindowShouldClose(window))
 		{
 			glfwPollEvents();
-			renderer.drawFrame(framebufferResized);
+			renderer.drawFrame(framebufferResized, isPPLightingEnabled);
 		}
 
 		renderer.waitUntilDone();
 	}
 
 	GLFWwindow* window = nullptr;
-	bool framebufferResized = false;
 	Renderer renderer;
+	bool framebufferResized = false;
+	bool isPPLightingEnabled = true;
 };
 
 int main()
