@@ -1,6 +1,6 @@
 /Vulk.vcxproj.user
 .vs/
-*.obj
+Vulk/
 *.idb
 *.pdb
 *.exe*

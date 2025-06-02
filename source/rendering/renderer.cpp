@@ -6,7 +6,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "third_party/stb_image.h"
 
-const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string MODEL_PATH = "models/stanford_bunny.obj";
 const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 struct UniformBufferObject
@@ -315,7 +315,7 @@ void Renderer::loadModel()
 				attrib.vertices[3 * index.vertex_index + 2]
 			};
 
-			vertex.texCoord = 
+			/*vertex.texCoord =
 			{
 				attrib.texcoords[2 * index.texcoord_index + 0],
 				1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
@@ -326,7 +326,7 @@ void Renderer::loadModel()
 				attrib.colors[3 * index.vertex_index + 0],
 				attrib.colors[3 * index.vertex_index + 1],
 				attrib.colors[3 * index.vertex_index + 2]
-			};
+			};*/
 
 			vertex.normal =
 			{
@@ -492,7 +492,8 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	ubo.model = glm::rotate(ubo.model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), impl.swapChainExtent.width / (float)impl.swapChainExtent.height, 0.1f, 10.0f);
 
