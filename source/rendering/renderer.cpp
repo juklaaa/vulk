@@ -6,8 +6,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "third_party/stb_image.h"
 
-const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string MODEL_PATH = "models/stanford_bunny.obj";
 const std::string TEXTURE_PATH = "textures/viking_room.png";
+
+struct PushConstants
+{
+	uint32_t isPPLightingEnabled = true;
+};
 
 struct UniformBufferObject
 {
@@ -177,12 +182,16 @@ void Renderer::createGraphicsPipeline()
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
+	VkPushConstantRange pushConstant{};
+	pushConstant.size = sizeof(PushConstants);
+	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 1;
 	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 
 	if (vkCreatePipelineLayout(impl.device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 	{
@@ -315,7 +324,7 @@ void Renderer::loadModel()
 				attrib.vertices[3 * index.vertex_index + 2]
 			};
 
-			vertex.texCoord = 
+			/*vertex.texCoord =
 			{
 				attrib.texcoords[2 * index.texcoord_index + 0],
 				1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
@@ -326,7 +335,7 @@ void Renderer::loadModel()
 				attrib.colors[3 * index.vertex_index + 0],
 				attrib.colors[3 * index.vertex_index + 1],
 				attrib.colors[3 * index.vertex_index + 2]
-			};
+			};*/
 
 			vertex.normal =
 			{
@@ -479,8 +488,9 @@ void Renderer::waitUntilDone()
 	vkDeviceWaitIdle(impl.device);
 }
 
-void Renderer::drawFrame(bool framebufferResized)
+void Renderer::drawFrame(bool framebufferResized, bool isPPLightingEnabled_)
 {
+	isPPLightingEnabled = isPPLightingEnabled_;
 	impl.drawFrame(framebufferResized);
 }
 
@@ -492,7 +502,8 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	ubo.model = glm::rotate(ubo.model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), impl.swapChainExtent.width / (float)impl.swapChainExtent.height, 0.1f, 10.0f);
 
@@ -552,6 +563,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[impl.currentFrame], 0, nullptr);
+
+	PushConstants constants;
+	constants.isPPLightingEnabled = isPPLightingEnabled;
+	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);

@@ -72,9 +72,7 @@ namespace std
 	{
 		size_t operator()(Vertex const& vertex) const
 		{
-			return ((hash<glm::vec3>()(vertex.pos) ^
-					(hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-				(hash<glm::vec2>()(vertex.texCoord) << 1);
+			return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ ((hash<glm::vec2>()(vertex.texCoord) << 1) ^ (hash<glm::vec2>()(vertex.normal) >> 1));
 		}
 	};
 }
@@ -85,7 +83,7 @@ public:
 
 	void init(GLFWwindow* window);
 	void deinit();
-	void drawFrame(bool framebufferResized);
+	void drawFrame(bool framebufferResized, bool isPPLightingEnabled);
 	void waitUntilDone();
 
 private:
@@ -132,4 +130,5 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 	uint32_t mipLevels;
+	bool isPPLightingEnabled = true;
 };
