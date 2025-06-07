@@ -5,6 +5,7 @@ layout(location = 1) in vec2 fragTexCoord;
 layout(location = 2) in vec3 normalWorldSpace;
 
 layout(binding = 1) uniform sampler2D texSampler;
+layout(binding = 2) uniform sampler2D normalSmpler;
 
 layout(push_constant) uniform constants
 {
@@ -22,10 +23,14 @@ void main()
 
     if (pushConstants.isPPLightingEnabled == 1)
     {
-        outColor = vec4(fragColor, 1.0f) * lightIntensity;
+        //outColor = texture(texSampler, fragTexCoord) * lightIntensity;
+        outColor = texture(texSampler, fragTexCoord);
+        
     }
     else
     {
-        outColor = vec4(fragColor, 1.0f);
+        //outColor = texture(texSampler, fragTexCoord) * vec4(fragColor,1.0f);
+        //outColor=vec4(1,1,1,0);
+        outColor = texture(normalSmpler, fragTexCoord);
     }
 }

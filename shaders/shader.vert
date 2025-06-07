@@ -26,7 +26,7 @@ const vec3 DIRECTION_TO_LIGHT = normalize(vec3(5.0f, 3.0f, 1.0f));
 void main() {
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
-
+    fragTexCoord = inTexCoord;
     normalWorldSpace = normalize(ubo.model * vec4(inNormal, 0.0f)).xyz;
     if (pushConstants.isPPLightingEnabled == 1)
     {
@@ -35,7 +35,5 @@ void main() {
     else
     {
         fragColor = vec3(1.0f, 1.0f, 1.0f) * max(dot(normalWorldSpace, DIRECTION_TO_LIGHT), 0.1f);
-    }
-
-    fragTexCoord = inTexCoord;
+    }    
 }

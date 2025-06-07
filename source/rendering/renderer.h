@@ -96,11 +96,16 @@ private:
 	
 	void createTextureImage();
 	void createTextureImageView();
+
+	void createNormalMapImage();
+	void createNormalMapImageView();
+
+
 	void createTextureSampler();
 	void loadModel();
-	void createVertexBuffer();
-	
+	void createVertexBuffer();	
 	void createIndexBuffer();
+
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();
@@ -123,12 +128,21 @@ private:
 	std::vector<void*> uniformBuffersMapped;
 	VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
+
 	VkImage textureImage;
 	VkDeviceMemory textureImageMemory;
 	VkImageView textureImageView;
+
+	VkImage normalMapImage;
+	VkDeviceMemory normalMapImageMemory;
+	VkImageView normalMapImageView;
+
 	VkSampler textureSampler;
+
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 	uint32_t mipLevels;
 	bool isPPLightingEnabled = true;
+
+
 };
