@@ -305,7 +305,7 @@ void Renderer::createNormalMapImage()
 	impl.transitionImageLayout(normalMapImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
 	impl.copyBufferToImage(stagingBuffer, normalMapImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-	//impl.generateMipmaps(normalMapImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
+	impl.generateMipmaps(normalMapImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, 1/*mipLevels*/);
 
 	vkDestroyBuffer(impl.device, stagingBuffer, nullptr);
 	vkFreeMemory(impl.device, stagingBufferMemory, nullptr);
