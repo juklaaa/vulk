@@ -36,7 +36,7 @@ void main() {
 
     vec3 T = normalize(ubo.model*vec4(inTangent, 0.0f)).xyz;
     vec3 N = normalize(ubo.model*vec4(inNormal, 0.0f)).xyz;
-    vec3 B = normalize(cross(T, N));
+    vec3 B = normalize(cross(N, T));
     fragTBN = mat3(T, B, N);
 
 //    normalWorldSpace = normalize(ubo.model * vec4(inNormal, 0.0f)).xyz;  

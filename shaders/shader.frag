@@ -22,10 +22,11 @@ void main()
 //    float lightIntensity = max(dot(normalize(normalWorldSpace), DIRECTION_TO_LIGHT), 0.1f);
     //outColor = texture(texSampler, fragTexCoord) * lightIntensity;
 
-   
-
+    vec3 fixedNormalMap = vec3(0.5f, 0.5f, 1.0f);
     vec3 normalMap = texture(normalSmpler, fragTexCoord).rgb;
-    normalMap = normalMap * 2.0 - 1.0;
+    fixedNormalMap = fixedNormalMap * 2.0f - vec3(1.0f);
+    normalMap = normalMap * 2.0f - vec3(1.0f);
+    vec3 fixedNormalWorld = normalize(fragTBN * fixedNormalMap);
     vec3 normalWorld = normalize(fragTBN * normalMap);
 
     float lightIntensity = max(dot(normalWorld, DIRECTION_TO_LIGHT), 0.1);
@@ -33,13 +34,16 @@ void main()
     if (pushConstants.isPPLightingEnabled == 1)
     {
         //outColor = texture(texSampler, fragTexCoord) * lightIntensity;
-        outColor = texture(normalSmpler,fragTexCoord);        
+        outColor = vec4(texture(normalSmpler,fragTexCoord).rgb, 1.0f);        
     }
     else
     {
         //outColor = texture(texSampler, fragTexCoord) * vec4(fragColor,1.0f);
         //outColor=vec4(1,1,1,0);
-        outColor = vec4(lightIntensity*fragColor,0);
-//        outColor = vec4(normalWorld, 0);
+        outColor = vec4(lightIntensity*fragColor, 1.0f);
+        //outColor = vec4(fragTexCoord, 0.0f, 1.0f);
+        //outColor = texture(normalSmpler,fragTexCoord);        
+        //outColor = vec4(normalWorld, 1.0f);// + vec4(0.5f, 0.5f, 0.5f, 1.0f);
+        //outColor = 0.5f * vec4(fragColor, 1.0f) + vec4(0.5f, 0.5f, 0.5f, 1.0f);
     }
 }
