@@ -68,7 +68,7 @@ void Renderer::createDescriptorSetLayout()
 	normalSamplerLayoutBinding.descriptorCount = 1;
 	normalSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	normalSamplerLayoutBinding.pImmutableSamplers = nullptr;
-	normalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	normalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
 
 	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding,normalSamplerLayoutBinding};
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -410,9 +410,50 @@ void Renderer::loadModel()
 			}
 
 			indices.push_back(uniqueVertices[vertex]);
+			/*vertices.push_back(vertex);
+			indices.push_back(static_cast<uint32_t>(vertices.size() - 1));*/
 		}
 	}
+
+	computeTangents();
 }
+
+void Renderer::computeTangents() 
+{
+	for (int i = 0; i < indices.size(); i += 3)
+	{
+		Vertex& v0 = vertices[indices[i]];
+		Vertex& v1 = vertices[indices[i + 1]];
+		Vertex& v2 = vertices[indices[i + 2]];
+
+		glm::vec3 edge1 = v1.pos - v0.pos;
+		glm::vec3 edge2 = v2.pos - v0.pos;
+
+		float deltaU1 = v1.texCoord.x - v0.texCoord.x;
+		float deltaV1 = v1.texCoord.y - v0.texCoord.y;
+
+		float deltaU2 = v2.texCoord.x - v0.texCoord.x;
+		float deltaV2 = v2.texCoord.y - v0.texCoord.y;
+
+		float f = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+
+		glm::vec3 tangent;
+
+		tangent.x = f * (deltaV2 * edge1.x - deltaV1 * edge2.x);
+		tangent.y = f * (deltaV2 * edge1.y - deltaV1 * edge2.y);
+		tangent.z = f * (deltaV2 * edge1.z - deltaV1 * edge2.z);
+
+		v0.tangent += tangent;
+		v1.tangent += tangent;
+		v2.tangent += tangent;
+	}
+
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		vertices[i].tangent = glm::normalize(vertices[i].tangent);
+	}
+}
+
 
 void Renderer::createVertexBuffer()
 {
