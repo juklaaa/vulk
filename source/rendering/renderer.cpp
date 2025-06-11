@@ -246,8 +246,7 @@ void Renderer::createTextureImage()
 		throw std::runtime_error("failed to load texture image!");
 	}
 
-	//mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-	mipLevels = 1;
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -260,12 +259,12 @@ void Renderer::createTextureImage()
 
 	stbi_image_free(pixels);
 
-	impl.createImage(texWidth, texHeight, 1/*mipLevels*/, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+	impl.createImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
-	impl.transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1/*mipLevels*/);
+	impl.transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
 	impl.copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-	impl.generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, 1/*mipLevels*/);
+	impl.generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 
 	vkDestroyBuffer(impl.device, stagingBuffer, nullptr);
 	vkFreeMemory(impl.device, stagingBufferMemory, nullptr);
@@ -273,7 +272,7 @@ void Renderer::createTextureImage()
 
 void Renderer::createTextureImageView()
 {
-	textureImageView = impl.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1/*mipLevels*/);
+	textureImageView = impl.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 }
 
 void Renderer::createNormalMapImage()
@@ -287,8 +286,6 @@ void Renderer::createNormalMapImage()
 		throw std::runtime_error("failed to load texture image!");
 	}
 
-	//mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 	impl.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
@@ -300,12 +297,12 @@ void Renderer::createNormalMapImage()
 
 	stbi_image_free(pixels);
 
-	impl.createImage(texWidth, texHeight,1 /*mipLevels*/, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalMapImage, normalMapImageMemory);
+	impl.createImage(texWidth, texHeight,mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalMapImage, normalMapImageMemory);
 
 	impl.transitionImageLayout(normalMapImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
 	impl.copyBufferToImage(stagingBuffer, normalMapImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-	impl.generateMipmaps(normalMapImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, 1/*mipLevels*/);
+	impl.generateMipmaps(normalMapImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, mipLevels);
 
 	vkDestroyBuffer(impl.device, stagingBuffer, nullptr);
 	vkFreeMemory(impl.device, stagingBufferMemory, nullptr);
@@ -313,7 +310,7 @@ void Renderer::createNormalMapImage()
 
 void Renderer::createNormalMapImageView()
 {
-	normalMapImageView = impl.createImageView(normalMapImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 1 /*mipLevels*/);
+	normalMapImageView = impl.createImageView(normalMapImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 }
 
 void Renderer::createTextureSampler()
@@ -410,8 +407,6 @@ void Renderer::loadModel()
 			}
 
 			indices.push_back(uniqueVertices[vertex]);
-			/*vertices.push_back(vertex);
-			indices.push_back(static_cast<uint32_t>(vertices.size() - 1));*/
 		}
 	}
 
@@ -622,10 +617,10 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 
 	UniformBufferObject ubo{};
 
-	ubo.model = glm::rotate(glm::mat4(1.0f),glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f),glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, -1.0f, 0.0f));
 	ubo.model = glm::rotate(ubo.model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.view = glm::lookAt(glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), impl.swapChainExtent.width / (float)impl.swapChainExtent.height, 0.1f, 10.0f);
 
 	ubo.proj[1][1] *= -1;
