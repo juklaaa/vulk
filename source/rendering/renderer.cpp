@@ -20,6 +20,7 @@ struct UniformBufferObject
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+	glm::vec3 light;
 };
 
 void Renderer::init(GLFWwindow* window)
@@ -624,6 +625,8 @@ void Renderer::updateUniformBuffer(uint32_t currentImage)
 	ubo.proj = glm::perspective(glm::radians(45.0f), impl.swapChainExtent.width / (float)impl.swapChainExtent.height, 0.1f, 10.0f);
 
 	ubo.proj[1][1] *= -1;
+
+	ubo.light = glm::vec3(5.0, 3.0, 1.0);
 
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
