@@ -94,8 +94,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\rendering\model.cpp" />
     <ClCompile Include="source\rendering\renderer.cpp" />
     <ClCompile Include="source\rendering\renderer_impl.cpp" />
+    <ClCompile Include="source\rendering\texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
