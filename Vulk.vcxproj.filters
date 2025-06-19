@@ -31,5 +31,11 @@
     <ClCompile Include="source\rendering\renderer_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\rendering\model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\rendering\texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
