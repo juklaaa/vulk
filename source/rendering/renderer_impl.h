@@ -54,8 +54,10 @@ public:
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	void createImageViews();
 	void createRenderPass();
+	void createShadowmapRenderPass();
 	void createDepthResources();
 	void createFramebuffers();
+	void createShadowmapFramebuffer();
 	void createCommandPool();
 	VkFormat findDepthFormat();
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -97,8 +99,10 @@ public:
 	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
 	VkRenderPass renderPass;
+	VkRenderPass shadowmapRenderPass;
 	VkCommandPool commandPool;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	VkFramebuffer shadowmapFramebuffer;
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -111,4 +115,10 @@ public:
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
+	VkImage shadowmapColorImage;
+	VkDeviceMemory shadowmapColorImageMemory;
+	VkImageView shadowmapColorImageView;
+	VkImage shadowmapDepthImage;
+	VkDeviceMemory shadowmapDepthImageMemory;
+	VkImageView shadowmapDepthImageView;
 };
