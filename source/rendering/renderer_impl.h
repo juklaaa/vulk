@@ -84,6 +84,8 @@ public:
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData);
 
+	static constexpr uint32_t shadowmapSize = 2048;
+
 	Renderer* renderer = nullptr;
 	GLFWwindow* window = nullptr;
 	VkInstance instance;
