@@ -31,11 +31,11 @@ private:
 
 	struct Pipeline
 	{
-		void init(Renderer* renderer, std::string_view shaderPath);
+		void init(Renderer* renderer, std::string_view shaderPath, VkRenderPass renderPass);
 		void deinit();
 
 		void createDescriptorSetLayout();
-		void createGraphicsPipeline(std::string_view shaderPath);
+		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass);
 
 		void createUniformBuffers();
 		void createDescriptorPool();
@@ -68,6 +68,7 @@ private:
 	RendererImpl impl;
 
 	Pipeline pipeline;
+	Pipeline offscreenPipeline;
 
 	Texture texture;
 	Texture normalMap;
