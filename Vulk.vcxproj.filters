@@ -9,6 +9,12 @@
   <ItemGroup>
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
+    <None Include="shaders\offscreenshader.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shaders\offscreenshader.vert">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\common.h">
