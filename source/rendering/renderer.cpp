@@ -27,8 +27,8 @@ void Renderer::init(GLFWwindow* window)
 	texture.load(this, TEXTURE_PATH.c_str());
 	normalMap.load(this, NORMAL_MAP_PATH.c_str(), VK_FORMAT_R8G8B8A8_UNORM);
 
-	pipeline.init(this, "nmap", impl.renderPass);
-	offscreenPipeline.init(this, "offscreen", impl.shadowmapRenderPass);
+	pipeline.init(this, "nmap", impl.renderPass, impl.msaaSamples, 5);
+	offscreenPipeline.init(this, "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 1);
 	
 	model.load(this, MODEL_PATH.c_str());
 	floorModel.load(this, "models/cube.obj");
@@ -240,11 +240,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 //==========================Pipeline=========================================//
 
-void Renderer::Pipeline::init(Renderer* renderer_, std::string_view shaderPath, VkRenderPass renderPass)
+void Renderer::Pipeline::init(Renderer* renderer_, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
 	renderer = renderer_;
 	createDescriptorSetLayout();
-	createGraphicsPipeline(shaderPath, renderPass);
+	createGraphicsPipeline(shaderPath, renderPass, msaaSamples, numVertAttributes);
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
@@ -297,7 +297,7 @@ void Renderer::Pipeline::createDescriptorSetLayout()
 	}
 }
 
-void Renderer::Pipeline::createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass)
+void Renderer::Pipeline::createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
 	auto vertShaderCode = readFile(std::format("shaders/{}_v.spv", shaderPath));
 	auto fragShaderCode = readFile(std::format("shaders/{}_f.spv", shaderPath));
@@ -322,7 +322,7 @@ void Renderer::Pipeline::createGraphicsPipeline(std::string_view shaderPath, VkR
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	auto bindingDescription = Vertex::getBindingDescription();
-	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions(numVertAttributes);
 
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -366,7 +366,7 @@ void Renderer::Pipeline::createGraphicsPipeline(std::string_view shaderPath, VkR
 
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.rasterizationSamples = getImpl().msaaSamples;
+	multisampling.rasterizationSamples = msaaSamples;
 	multisampling.pSampleMask = nullptr; // Optional
 	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
 	multisampling.alphaToOneEnable = VK_FALSE; // Optional
@@ -468,7 +468,7 @@ void Renderer::Pipeline::createUniformBuffers()
 
 void Renderer::Pipeline::createDescriptorPool()
 {
-	std::array<VkDescriptorPoolSize, 3> poolSizes{};
+	std::array<VkDescriptorPoolSize, 4> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
 
@@ -477,6 +477,9 @@ void Renderer::Pipeline::createDescriptorPool()
 
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[2].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
+
+	poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[3].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
 
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -523,7 +526,12 @@ void Renderer::Pipeline::createDescriptorSets()
 		normalMapInfo.imageView = renderer->normalMap.getImageView();
 		normalMapInfo.sampler = renderer->textureSampler;
 
-		std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+		VkDescriptorImageInfo depthMapInfo{};
+		depthMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		depthMapInfo.imageView = getImpl().shadowmapDepthImageView;
+		depthMapInfo.sampler = renderer->textureSampler;
+
+		std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = descriptorSets[i];
@@ -548,6 +556,14 @@ void Renderer::Pipeline::createDescriptorSets()
 		descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		descriptorWrites[2].descriptorCount = 1;
 		descriptorWrites[2].pImageInfo = &normalMapInfo;
+
+		descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[3].dstSet = descriptorSets[i];
+		descriptorWrites[3].dstBinding = 3;
+		descriptorWrites[3].dstArrayElement = 0;
+		descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[3].descriptorCount = 1;
+		descriptorWrites[3].pImageInfo = &depthMapInfo;
 
 		vkUpdateDescriptorSets(getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}

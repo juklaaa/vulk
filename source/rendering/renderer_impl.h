@@ -117,9 +117,6 @@ public:
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
-	VkImage shadowmapColorImage;
-	VkDeviceMemory shadowmapColorImageMemory;
-	VkImageView shadowmapColorImageView;
 	VkImage shadowmapDepthImage;
 	VkDeviceMemory shadowmapDepthImageMemory;
 	VkImageView shadowmapDepthImageView;
