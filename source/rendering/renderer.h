@@ -31,11 +31,11 @@ private:
 
 	struct Pipeline
 	{
-		void init(Renderer* renderer, std::string_view shaderPath, VkRenderPass renderPass);
+		void init(Renderer* renderer, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 		void deinit();
 
 		void createDescriptorSetLayout();
-		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass);
+		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
 		void createUniformBuffers();
 		void createDescriptorPool();
