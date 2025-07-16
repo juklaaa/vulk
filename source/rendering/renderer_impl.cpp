@@ -622,10 +622,17 @@ void RendererImpl::cleanupSwapChain()
 	vkDestroyImage(device, depthImage, nullptr);
 	vkFreeMemory(device, depthImageMemory, nullptr);
 
+	vkDestroyImageView(device, shadowmapDepthImageView, nullptr);
+	vkDestroyImage(device, shadowmapDepthImage, nullptr);
+	vkFreeMemory(device, shadowmapDepthImageMemory, nullptr);
+
 	for (auto framebuffer : swapChainFramebuffers)
 	{
 		vkDestroyFramebuffer(device, framebuffer, nullptr);
 	}
+
+	vkDestroyFramebuffer(device, shadowmapFramebuffer, nullptr);
+
 
 	for (auto imageView : swapChainImageViews)
 	{
@@ -904,8 +911,8 @@ void RendererImpl::createShadowmapFramebuffer()
 	framebufferInfo.renderPass = shadowmapRenderPass;
 	framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 	framebufferInfo.pAttachments = attachments.data();
-	framebufferInfo.width = swapChainExtent.width;
-	framebufferInfo.height = swapChainExtent.height;
+	framebufferInfo.width = shadowmapSize;
+	framebufferInfo.height = shadowmapSize;
 	framebufferInfo.layers = 1;
 
 	if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &shadowmapFramebuffer) != VK_SUCCESS)
