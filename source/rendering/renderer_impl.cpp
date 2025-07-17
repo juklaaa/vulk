@@ -7,6 +7,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include <stdlib.h>
+
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const std::vector<const char*> validationLayers =
@@ -671,8 +673,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RendererImpl::debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
-
 	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+	int size = strnlen(pCallbackData->pMessage, 2048);
+	size += 1;
+	wchar_t* wstr = new wchar_t[size];
+	size_t convertedSize = 0;
+	mbstowcs_s(&convertedSize, wstr, size, pCallbackData->pMessage, size);
+	assert(convertedSize == size);
+	OutputDebugString(wstr);
+	delete[] wstr;
 
 	return VK_FALSE;
 }
