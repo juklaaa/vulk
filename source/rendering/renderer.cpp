@@ -16,6 +16,7 @@ struct UniformBufferObject
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+	glm::mat4 depthVP;
 	glm::vec3 light;
 };
 
@@ -112,13 +113,13 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = impl.shadowmapRenderPass;
-		renderPassInfo.framebuffer = impl.shadowmapFramebuffer;
+		renderPassInfo.framebuffer = impl.shadowmapFramebuffer;//to sie gdzieœ usuwa i nie jest odbudowane
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = { RendererImpl::shadowmapSize, RendererImpl::shadowmapSize };
 
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		std::array<VkClearValue, 1> clearValues{};
+		clearValues[0].depthStencil = { 1.0f, 0 };
+		
 
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
@@ -141,7 +142,10 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		scissor.extent = { RendererImpl::shadowmapSize, RendererImpl::shadowmapSize };
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline.pipelineLayout, 0, 1, &offscreenPipeline.descriptorSets[impl.currentFrame], 0, nullptr);
+		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline.pipelineLayout, 0, 1, &offscreenPipeline.descriptorSets[impl.currentFrame], 0, nullptr);
+		
+		//z³e tylko do testu
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout, 0, 1, &pipeline.descriptorSets[impl.currentFrame], 0, nullptr);
 
 		PushConstants constants;
 		constants.isPPLightingEnabled = isPPLightingEnabled;
@@ -527,7 +531,7 @@ void Renderer::Pipeline::createDescriptorSets()
 		normalMapInfo.sampler = renderer->textureSampler;
 
 		VkDescriptorImageInfo depthMapInfo{};
-		depthMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		depthMapInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 		depthMapInfo.imageView = getImpl().shadowmapDepthImageView;
 		depthMapInfo.sampler = renderer->textureSampler;
 
@@ -586,7 +590,19 @@ void Renderer::Pipeline::updateUniformBuffer(uint32_t currentImage)
 
 	ubo.proj[1][1] *= -1;
 
-	ubo.light = glm::vec3(5.0, 3.0, 1.0);
+	ubo.light = glm::vec3(-5.0f, 5.0f, 5.0f);
+	
+
+	float orthoSize = 4.0f;
+	float nearPlane = 0.1f;
+	float farPlane = 10.0f;
+
+	glm::vec3 lightDir = glm::normalize(ubo.light);
+	glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));
+	glm::mat4 lightProj = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
+
+	ubo.depthVP = lightProj * lightView;
+
 
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }

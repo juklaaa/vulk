@@ -23,23 +23,29 @@ layout(location = 4) in vec3 inTangent;
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2) out mat3 fragTBN;
-layout(location = 5) out vec3 fragCameraPosition;
-layout(location = 6) out vec3 fragPositon;
-layout(location = 7) out vec3 fragLight;
-layout(location = 8) out vec3 fragLightCamPosition;
+layout(location = 5) out vec3 fragViewDir;
+layout(location = 6) out vec3 fragLight;
+layout(location = 7) out vec4 fragLightCamPosition;
 
-const vec3 DIRECTION_TO_LIGHT = normalize(vec3(5.0f, 3.0f, 1.0f));
+const mat4 biasMat = mat4( 
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.0, 1.0 );
 
-void main() {
 
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
-
+void main() 
+{
     fragLight = ubo.light;
     fragTexCoord = inTexCoord;
     fragColor = inColor;
-    fragPositon = (ubo.model * vec4(inPosition, 1.0f)).xyz;
-    fragCameraPosition = inverse(ubo.view)[3].xyz;
-    fragLightCamPosition = lightVP * fragPositon;
+
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
+    fragLightCamPosition = biasMat * ubo.depthVP * ubo.model * vec4(inPosition, 1.0f);
+
+    vec3 Positon = (ubo.model * vec4(inPosition, 1.0f)).xyz;
+    vec3 CameraPosition = inverse(ubo.view)[3].xyz;
+    fragViewDir = normalize(CameraPosition - Positon.xyz);    
 
     vec3 T = normalize(ubo.model*vec4(inTangent, 0.0f)).xyz;
     vec3 N = normalize(ubo.model*vec4(inNormal, 0.0f)).xyz;

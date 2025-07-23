@@ -37,10 +37,10 @@ private:
 		void createDescriptorSetLayout();
 		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
-		void createUniformBuffers();
-		void createDescriptorPool();
-		void createDescriptorSets();
-		void updateUniformBuffer(uint32_t currentImage);
+		void createUniformBuffers(); //????
+		void createDescriptorPool(); 
+		void createDescriptorSets(); 
+		void updateUniformBuffer(uint32_t currentImage); 
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }

@@ -74,6 +74,15 @@ void RendererImpl::init(Renderer* renderer_, GLFWwindow* window_)
 void RendererImpl::deinit()
 {
 	cleanupSwapChain();
+
+	{
+		vkDestroyImageView(device, shadowmapDepthImageView, nullptr);
+		vkDestroyImage(device, shadowmapDepthImage, nullptr);
+		vkFreeMemory(device, shadowmapDepthImageMemory, nullptr);
+
+		vkDestroyFramebuffer(device, shadowmapFramebuffer, nullptr);
+	}
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
@@ -624,23 +633,15 @@ void RendererImpl::cleanupSwapChain()
 	vkDestroyImage(device, depthImage, nullptr);
 	vkFreeMemory(device, depthImageMemory, nullptr);
 
-	vkDestroyImageView(device, shadowmapDepthImageView, nullptr);
-	vkDestroyImage(device, shadowmapDepthImage, nullptr);
-	vkFreeMemory(device, shadowmapDepthImageMemory, nullptr);
-
 	for (auto framebuffer : swapChainFramebuffers)
 	{
 		vkDestroyFramebuffer(device, framebuffer, nullptr);
 	}
 
-	vkDestroyFramebuffer(device, shadowmapFramebuffer, nullptr);
-
-
 	for (auto imageView : swapChainImageViews)
 	{
 		vkDestroyImageView(device, imageView, nullptr);
-	}
-
+	}	
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
