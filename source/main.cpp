@@ -62,12 +62,21 @@ private:
 
 	void mainLoop()
 	{
+		auto tlast = std::chrono::high_resolution_clock::time_point();
+		float minFrameTime = std::numeric_limits<float>::max();
 		while (!glfwWindowShouldClose(window))
 		{
+			auto tnow = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<float, std::milli> frameTimeDur = tnow - tlast;
+			tlast = tnow;
+			float frameTime = frameTimeDur.count();
+			minFrameTime = frameTime < minFrameTime ? frameTime : minFrameTime;
+
 			glfwPollEvents();
 			renderer.drawFrame(framebufferResized, isPPLightingEnabled);
 		}
 
+		std::cout << "Min Frame Time: " << minFrameTime << std::endl;
 		renderer.waitUntilDone();
 	}
 

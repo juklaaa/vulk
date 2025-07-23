@@ -27,20 +27,22 @@ public:
 	RendererImpl& getImpl() { return impl; }
 	VkDevice getDevice() { return impl.device; }
 
-private:
-
-	struct Pipeline
+	struct PipelineBase
 	{
+		virtual ~PipelineBase() = default;
+
 		void init(Renderer* renderer, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 		void deinit();
 
 		void createDescriptorSetLayout();
 		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
-		void createUniformBuffers(); //????
+		void createUniformBuffers();
 		void createDescriptorPool(); 
 		void createDescriptorSets(); 
-		void updateUniformBuffer(uint32_t currentImage); 
+
+		virtual size_t getUBOSize() const = 0;
+		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) = 0;
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }
@@ -57,6 +59,8 @@ private:
 		std::vector<VkDescriptorSet> descriptorSets;
 	};
 
+private:
+
 	friend class RendererImpl;
 
 	void createTextureSampler();
@@ -67,8 +71,8 @@ private:
 	
 	RendererImpl impl;
 
-	Pipeline pipeline;
-	Pipeline offscreenPipeline;
+	std::unique_ptr<PipelineBase> pipeline;
+	std::unique_ptr<PipelineBase> offscreenPipeline;
 
 	Texture texture;
 	Texture normalMap;

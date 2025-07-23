@@ -11,13 +11,62 @@ struct PushConstants
 	uint32_t isPPLightingEnabled = true;
 };
 
-struct UniformBufferObject
+struct OffscreenUBO
+{
+	glm::mat4 MVP;
+};
+
+struct UBO
 {
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
-	glm::mat4 depthVP;
+	glm::mat4 depthMVP;
 	glm::vec3 light;
+};
+
+struct SceneDataForUniforms
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+	glm::mat4 offscreenMVP;
+	glm::vec3 light;
+};
+
+template<typename UBO_Type>
+struct Pipeline : public Renderer::PipelineBase
+{
+	virtual size_t getUBOSize() const override
+	{
+		return sizeof(UBO_Type);
+	}
+};
+
+struct MainPipeline : public Pipeline<UBO>
+{
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) override
+	{
+		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
+		UBO ubo{};
+		ubo.model = sceneData.model;
+		ubo.view = sceneData.view;
+		ubo.proj = sceneData.proj;
+		ubo.light = sceneData.light;
+		ubo.depthMVP = sceneData.offscreenMVP;
+
+		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	}
+};
+
+struct OffscreenPipeline : public Pipeline<OffscreenUBO>
+{
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) override
+	{
+		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
+		OffscreenUBO ubo{ sceneData.offscreenMVP };
+		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	}
 };
 
 void Renderer::init(GLFWwindow* window)
@@ -28,8 +77,10 @@ void Renderer::init(GLFWwindow* window)
 	texture.load(this, TEXTURE_PATH.c_str());
 	normalMap.load(this, NORMAL_MAP_PATH.c_str(), VK_FORMAT_R8G8B8A8_UNORM);
 
-	pipeline.init(this, "nmap", impl.renderPass, impl.msaaSamples, 5);
-	offscreenPipeline.init(this, "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 1);
+	pipeline = std::make_unique<MainPipeline>();
+	pipeline->init(this, "nmap", impl.renderPass, impl.msaaSamples, 5);
+	offscreenPipeline = std::make_unique<OffscreenPipeline>();
+	offscreenPipeline->init(this, "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 1);
 	
 	model.load(this, MODEL_PATH.c_str());
 	floorModel.load(this, "models/cube.obj");
@@ -39,8 +90,8 @@ void Renderer::deinit()
 {
 	vkDestroySampler(getDevice(), textureSampler, nullptr);
 
-	pipeline.deinit();
-	offscreenPipeline.deinit();
+	pipeline->deinit();
+	offscreenPipeline->deinit();
 	model.unload();
 	floorModel.unload();
 	texture.unload();
@@ -83,7 +134,39 @@ void Renderer::createTextureSampler()
 
 void Renderer::updateUniformBuffer(uint32_t currentImage)
 {
-	pipeline.updateUniformBuffer(currentImage);
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
+	model = glm::rotate(model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
+
+	proj[1][1] *= -1;
+
+	glm::vec3 light = glm::vec3(-5.0f, 5.0f, 5.0f);
+
+	float orthoSize = 4.0f;
+	float nearPlane = 0.1f;
+	float farPlane = 10.0f;
+
+	glm::vec3 lightDir = glm::normalize(light);
+	glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));
+	glm::mat4 lightProj = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
+
+	glm::mat4 offscreenMVP = lightProj * lightView * model;
+
+	SceneDataForUniforms sceneDataForUniforms{};
+	sceneDataForUniforms.model = model;
+	sceneDataForUniforms.view = view;
+	sceneDataForUniforms.proj = proj;
+	sceneDataForUniforms.light = light;
+	sceneDataForUniforms.offscreenMVP = offscreenMVP;
+
+	pipeline->updateUniformBuffer(currentImage, &sceneDataForUniforms);
+	offscreenPipeline->updateUniformBuffer(currentImage, &sceneDataForUniforms);
 }
 
 void Renderer::waitUntilDone()
@@ -119,14 +202,13 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 		std::array<VkClearValue, 1> clearValues{};
 		clearValues[0].depthStencil = { 1.0f, 0 };
-		
 
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline.graphicsPipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->graphicsPipeline);
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -142,14 +224,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		scissor.extent = { RendererImpl::shadowmapSize, RendererImpl::shadowmapSize };
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline.pipelineLayout, 0, 1, &offscreenPipeline.descriptorSets[impl.currentFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame], 0, nullptr);
 		
-		//z³e tylko do testu
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout, 0, 1, &pipeline.descriptorSets[impl.currentFrame], 0, nullptr);
-
 		PushConstants constants;
 		constants.isPPLightingEnabled = isPPLightingEnabled;
-		vkCmdPushConstants(commandBuffer, pipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+		vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
 
 		{
 			VkBuffer vertexBuffers[] = { model.getVertexBuffer() };
@@ -191,7 +270,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.graphicsPipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->graphicsPipeline);
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -207,11 +286,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		scissor.extent = impl.swapChainExtent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout, 0, 1, &pipeline.descriptorSets[impl.currentFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame], 0, nullptr);
 
 		PushConstants constants;
 		constants.isPPLightingEnabled = isPPLightingEnabled;
-		vkCmdPushConstants(commandBuffer, pipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+		vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
 
 		{
 			VkBuffer vertexBuffers[] = { model.getVertexBuffer() };
@@ -244,7 +323,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 //==========================Pipeline=========================================//
 
-void Renderer::Pipeline::init(Renderer* renderer_, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
+void Renderer::PipelineBase::init(Renderer* renderer_, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
 	renderer = renderer_;
 	createDescriptorSetLayout();
@@ -254,7 +333,7 @@ void Renderer::Pipeline::init(Renderer* renderer_, std::string_view shaderPath, 
 	createDescriptorSets();
 }
 
-void Renderer::Pipeline::deinit()
+void Renderer::PipelineBase::deinit()
 {
 	for (size_t i = 0; i < getImpl().getNumFramesInFlight(); i++)
 	{
@@ -269,7 +348,7 @@ void Renderer::Pipeline::deinit()
 	vkDestroyPipelineLayout(getDevice(), pipelineLayout, nullptr);
 }
 
-void Renderer::Pipeline::createDescriptorSetLayout()
+void Renderer::PipelineBase::createDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
@@ -301,7 +380,7 @@ void Renderer::Pipeline::createDescriptorSetLayout()
 	}
 }
 
-void Renderer::Pipeline::createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
+void Renderer::PipelineBase::createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
 	auto vertShaderCode = readFile(std::format("shaders/{}_v.spv", shaderPath));
 	auto fragShaderCode = readFile(std::format("shaders/{}_f.spv", shaderPath));
@@ -454,9 +533,9 @@ void Renderer::Pipeline::createGraphicsPipeline(std::string_view shaderPath, VkR
 	getImpl().destroyShaderModule(vertShaderModule);
 }
 
-void Renderer::Pipeline::createUniformBuffers()
+void Renderer::PipelineBase::createUniformBuffers()
 {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+	VkDeviceSize bufferSize = getUBOSize();
 
 	uniformBuffers.resize(getNumFramesInFlight());
 	uniformBuffersMemory.resize(getNumFramesInFlight());
@@ -470,7 +549,7 @@ void Renderer::Pipeline::createUniformBuffers()
 	}
 }
 
-void Renderer::Pipeline::createDescriptorPool()
+void Renderer::PipelineBase::createDescriptorPool()
 {
 	std::array<VkDescriptorPoolSize, 4> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -498,7 +577,7 @@ void Renderer::Pipeline::createDescriptorPool()
 	}
 }
 
-void Renderer::Pipeline::createDescriptorSets()
+void Renderer::PipelineBase::createDescriptorSets()
 {
 	std::vector<VkDescriptorSetLayout> layouts(getNumFramesInFlight(), descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocInfo{};
@@ -518,7 +597,7 @@ void Renderer::Pipeline::createDescriptorSets()
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = uniformBuffers[i];
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
+		bufferInfo.range = getUBOSize();
 
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -571,40 +650,6 @@ void Renderer::Pipeline::createDescriptorSets()
 
 		vkUpdateDescriptorSets(getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
-}
-
-void Renderer::Pipeline::updateUniformBuffer(uint32_t currentImage)
-{
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-	UniformBufferObject ubo{};
-
-	ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, -1.0f, 0.0f));
-	ubo.model = glm::rotate(ubo.model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
-
-	ubo.proj[1][1] *= -1;
-
-	ubo.light = glm::vec3(-5.0f, 5.0f, 5.0f);
-	
-
-	float orthoSize = 4.0f;
-	float nearPlane = 0.1f;
-	float farPlane = 10.0f;
-
-	glm::vec3 lightDir = glm::normalize(ubo.light);
-	glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));
-	glm::mat4 lightProj = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
-
-	ubo.depthVP = lightProj * lightView;
-
-
-	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
 
 //===========================MISC======================================/
