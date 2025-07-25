@@ -5,7 +5,7 @@ layout(binding = 0) uniform UniformBufferObject
     mat4 model;
     mat4 view;
     mat4 proj;
-    mat4 depthVP;
+    mat4 depthMVP;
     vec3 light;
 } ubo;
 
@@ -41,7 +41,7 @@ void main()
     fragColor = inColor;
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
-    fragLightCamPosition = biasMat * ubo.depthVP * ubo.model * vec4(inPosition, 1.0f);
+    fragLightCamPosition = biasMat * ubo.depthMVP * vec4(inPosition, 1.0f);
 
     vec3 Positon = (ubo.model * vec4(inPosition, 1.0f)).xyz;
     vec3 CameraPosition = inverse(ubo.view)[3].xyz;
