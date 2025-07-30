@@ -34,12 +34,12 @@ public:
 		void init(Renderer* renderer, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 		void deinit();
 
-		void createDescriptorSetLayout();
+		virtual void createDescriptorSetLayout() = 0;
 		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
 		void createUniformBuffers();
-		void createDescriptorPool(); 
-		void createDescriptorSets(); 
+		virtual void createDescriptorPool() = 0; 
+		virtual void createDescriptorSets() = 0;
 
 		virtual size_t getUBOSize() const = 0;
 		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) = 0;
@@ -59,6 +59,9 @@ public:
 		std::vector<VkDescriptorSet> descriptorSets;
 	};
 
+	Texture texture;
+	Texture normalMap;
+	VkSampler textureSampler;
 private:
 
 	friend class RendererImpl;
@@ -74,10 +77,9 @@ private:
 	std::unique_ptr<PipelineBase> pipeline;
 	std::unique_ptr<PipelineBase> offscreenPipeline;
 
-	Texture texture;
-	Texture normalMap;
+	
 
-	VkSampler textureSampler;
+	
 
 	Model model;
 	Model floorModel;
