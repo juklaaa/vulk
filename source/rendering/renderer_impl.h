@@ -5,6 +5,7 @@
 
 struct GLFWwindow;
 class Renderer;
+class VisualComponent;
 
 struct QueueFamilyIndices
 {
@@ -30,7 +31,7 @@ public:
 
 	void init(Renderer* renderer, GLFWwindow* window);
 	void deinit();
-	void drawFrame(bool framebufferResized);
+	void drawFrame(const std::vector<VisualComponent*>& visualComponents, bool framebufferResized);
 
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkShaderModule createShaderModule(const std::vector<char>& code);

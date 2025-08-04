@@ -1,4 +1,6 @@
-#include "renderer.h"
+#include "Renderer.h"
+#include "Engine/Scene.h"
+#include "VisualComponent.h"
 
 const std::string MODEL_PATH = "models/stanford_bunny.obj";
 const std::string TEXTURE_PATH = "textures/stanford_bunny.jpg";
@@ -293,9 +295,6 @@ void Renderer::init(GLFWwindow* window)
 	pipeline->init(this, "nmap", impl.renderPass, impl.msaaSamples, 5);
 	offscreenPipeline = std::make_unique<OffscreenPipeline>();
 	offscreenPipeline->init(this, "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 1);
-	
-	model.load(this, MODEL_PATH.c_str());
-	floorModel.load(this, "models/cube.obj");
 }
 
 void Renderer::deinit()
@@ -304,8 +303,7 @@ void Renderer::deinit()
 
 	pipeline->deinit();
 	offscreenPipeline->deinit();
-	model.unload();
-	floorModel.unload();
+
 	texture.unload();
 	normalMap.unload();
 
@@ -386,13 +384,22 @@ void Renderer::waitUntilDone()
 	vkDeviceWaitIdle(getDevice());
 }
 
-void Renderer::drawFrame(bool framebufferResized, bool isPPLightingEnabled_)
+void Renderer::drawFrame(Scene& scene, bool framebufferResized, bool isPPLightingEnabled_)
 {
 	isPPLightingEnabled = isPPLightingEnabled_;
-	impl.drawFrame(framebufferResized);
+
+	std::vector<VisualComponent*> visualComponents;
+	scene.forAllActors([&visualComponents](Actor* actor)
+					   {
+						   if (auto visualComponent = actor->getComponent<VisualComponent>())
+						   {
+							   visualComponents.push_back(visualComponent);
+						   }
+					   });
+	impl.drawFrame(visualComponents, framebufferResized);
 }
 
-void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, const std::vector<VisualComponent*>& visualComponents)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -442,24 +449,15 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		constants.isPPLightingEnabled = isPPLightingEnabled;
 		vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
 
+		for (VisualComponent* vis : visualComponents)
 		{
-			VkBuffer vertexBuffers[] = { model.getVertexBuffer() };
+			VkBuffer vertexBuffers[] = { vis->getModel().getVertexBuffer() };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-			vkCmdBindIndexBuffer(commandBuffer, model.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, vis->getModel().getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(commandBuffer, model.getNumIndices(), 1, 0, 0, 0);
-		}
-
-		{
-			VkBuffer vertexBuffers[] = { floorModel.getVertexBuffer() };
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-			vkCmdBindIndexBuffer(commandBuffer, floorModel.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-			vkCmdDrawIndexed(commandBuffer, floorModel.getNumIndices(), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, vis->getModel().getNumIndices(), 1, 0, 0, 0);
 		}
 
 		vkCmdEndRenderPass(commandBuffer);
@@ -504,24 +502,15 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		constants.isPPLightingEnabled = isPPLightingEnabled;
 		vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
 
+		for (VisualComponent* vis : visualComponents)
 		{
-			VkBuffer vertexBuffers[] = { model.getVertexBuffer() };
+			VkBuffer vertexBuffers[] = { vis->getModel().getVertexBuffer()};
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-			vkCmdBindIndexBuffer(commandBuffer, model.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, vis->getModel().getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(commandBuffer, model.getNumIndices(), 1, 0, 0, 0);
-		}
-
-		{
-			VkBuffer vertexBuffers[] = { floorModel.getVertexBuffer() };
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-			vkCmdBindIndexBuffer(commandBuffer, floorModel.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-			vkCmdDrawIndexed(commandBuffer, floorModel.getNumIndices(), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, vis->getModel().getNumIndices(), 1, 0, 0, 0);
 		}
 
 		vkCmdEndRenderPass(commandBuffer);
