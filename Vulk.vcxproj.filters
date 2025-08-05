@@ -5,6 +5,15 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="Source Files\Rendering">
+      <UniqueIdentifier>{be0f05f7-805e-43bf-939c-e8505c35dca5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine">
+      <UniqueIdentifier>{275b4428-f581-4990-942e-8630bc0e5eb5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Math">
+      <UniqueIdentifier>{f7fe8367-379f-41ac-bf54-9ac341efa684}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader.frag" />
@@ -21,10 +30,25 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="source\rendering\renderer.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="source\rendering\renderer_impl.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Engine\Actor.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Engine\Component.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Engine\Scene.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Engine\TransformComponent.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Engine\Math\Math.h">
+      <Filter>Source Files\Engine\Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -32,16 +56,25 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\rendering\renderer.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="source\rendering\renderer_impl.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="source\rendering\model.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="source\rendering\texture.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Actor.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Component.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Scene.cpp">
+      <Filter>Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

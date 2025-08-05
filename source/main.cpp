@@ -4,8 +4,10 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-#include "common.h"
-#include "rendering/renderer.h"
+#include "Common.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/VisualComponent.h"
+#include "Engine/Scene.h"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -19,7 +21,17 @@ public:
 		initWindow();
 		renderer.init(window);
 
+		Model rabbitModel;
+		rabbitModel.load(&renderer, "models/stanford_bunny.obj");
+		Model floorModel;
+		floorModel.load(&renderer, "models/cube.obj");
+		scene.addActor()->addComponent<VisualComponent>()->setModel(rabbitModel);
+		scene.addActor()->addComponent<VisualComponent>()->setModel(floorModel);
+
 		mainLoop();
+
+		rabbitModel.unload();
+		floorModel.unload();
 
 		renderer.deinit();
 		deinitWindow();
@@ -73,7 +85,8 @@ private:
 			minFrameTime = frameTime < minFrameTime ? frameTime : minFrameTime;
 
 			glfwPollEvents();
-			renderer.drawFrame(framebufferResized, isPPLightingEnabled);
+			scene.tick(frameTime);
+			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
 		}
 
 		std::cout << "Min Frame Time: " << minFrameTime << std::endl;
@@ -82,6 +95,9 @@ private:
 
 	GLFWwindow* window = nullptr;
 	Renderer renderer;
+
+	Scene scene;
+
 	bool framebufferResized = false;
 	bool isPPLightingEnabled = true;
 };

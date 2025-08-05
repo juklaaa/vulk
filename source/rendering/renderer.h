@@ -15,13 +15,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+class Scene;
+
 class Renderer
 {
 public:
 
 	void init(GLFWwindow* window);
 	void deinit();
-	void drawFrame(bool framebufferResized, bool isPPLightingEnabled);
+	void drawFrame(Scene& scene, bool framebufferResized, bool isPPLightingEnabled);
 	void waitUntilDone();
 
 	RendererImpl& getImpl() { return impl; }
@@ -70,19 +72,12 @@ private:
 	
 	void updateUniformBuffer(uint32_t currentImage);
 	
-	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, const std::vector<VisualComponent*>& visualComponents);
 	
 	RendererImpl impl;
 
 	std::unique_ptr<PipelineBase> pipeline;
 	std::unique_ptr<PipelineBase> offscreenPipeline;
-
-	
-
-	
-
-	Model model;
-	Model floorModel;
 	
 	uint32_t mipLevels;
 	bool isPPLightingEnabled = true;

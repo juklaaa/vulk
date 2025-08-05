@@ -101,7 +101,7 @@ void RendererImpl::deinit()
 	vkDestroyInstance(instance, nullptr);
 }
 
-void RendererImpl::drawFrame(bool framebufferResized)
+void RendererImpl::drawFrame(const std::vector<VisualComponent*>& visualComponents, bool framebufferResized)
 {
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 	uint32_t imageIndex = 0;
@@ -120,7 +120,7 @@ void RendererImpl::drawFrame(bool framebufferResized)
 
 	vkResetFences(device, 1, &inFlightFences[currentFrame]);
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-	renderer->recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+	renderer->recordCommandBuffer(commandBuffers[currentFrame], imageIndex, visualComponents);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
