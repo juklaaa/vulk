@@ -1,5 +1,5 @@
-#include "renderer_impl.h"
-#include "renderer.h"
+#include "RendererImpl.h"
+#include "Renderer.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -116,7 +116,7 @@ void RendererImpl::drawFrame(const std::vector<VisualComponent*>& visualComponen
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	renderer->updateUniformBuffer(currentFrame);
+	renderer->updateUniformBuffer(currentFrame, visualComponents);
 
 	vkResetFences(device, 1, &inFlightFences[currentFrame]);
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);

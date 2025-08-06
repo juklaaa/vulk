@@ -4,11 +4,15 @@
 #include "Component.h"
 #include "TransformComponent.h"
 
+class Scene;
+
 class Actor
 {
 public:
 
 	virtual ~Actor();
+
+	Scene* getScene() const { return scene; }
 
 	Component* addComponent(Component* component);
 	template<typename ComponentType>
@@ -37,6 +41,9 @@ protected:
 
 private:
 	
+	friend class Scene;
+
+	Scene* scene = nullptr;
 	TransformComponent transformComponent;
 	std::vector<Component*> components;
 };
