@@ -47,17 +47,23 @@ struct Pipeline : public Renderer::PipelineBase
 
 struct MainPipeline : public Pipeline<UBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) override
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
 	{
 		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		UBO ubo{};
-		ubo.model = sceneData.model;
-		ubo.view = sceneData.view;
-		ubo.proj = sceneData.proj;
-		ubo.light = sceneData.light;
-		ubo.depthMVP = sceneData.offscreenMVP;
-
-		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+		std::vector<UBO> ubos;
+		ubos.reserve(numVisuals);
+		for (int i = 0; i < numVisuals; i++)
+		{
+			UBO ubo{};
+			ubo.model = sceneData.model;
+			ubo.view = sceneData.view;
+			ubo.proj = sceneData.proj;
+			ubo.light = sceneData.light;
+			ubo.depthMVP = sceneData.offscreenMVP;
+			ubos.push_back(ubo);
+		}
+		size_t dataSize = sizeof(UBO) * ubos.size();
+		memcpy(reinterpret_cast<char*>(uniformBuffersMapped) + currentImage * dataSize, ubos.data(), dataSize);
 	}
 
 	virtual void createDescriptorSetLayout() override
@@ -92,7 +98,7 @@ struct MainPipeline : public Pipeline<UBO>
 		}
 	}
 
-	virtual void createDescriptorPool() override
+	virtual void createDescriptorPool(int maxNumVisuals) override
 	{
 		std::array<VkDescriptorPoolSize, 4> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -107,12 +113,11 @@ struct MainPipeline : public Pipeline<UBO>
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[3].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
 
-
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(getNumFramesInFlight());
+		poolInfo.maxSets = static_cast<uint32_t>(maxNumVisuals * getNumFramesInFlight());
 
 		if (vkCreateDescriptorPool(getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -120,22 +125,31 @@ struct MainPipeline : public Pipeline<UBO>
 		}
 	}
 
-	virtual void createDescriptorSets() override
+	virtual void createDescriptorSets(int numVisuals) override
 	{
-		std::vector<VkDescriptorSetLayout> layouts(getNumFramesInFlight(), descriptorSetLayout);
+		if (numVisuals_DescriptorSets == numVisuals)
+			return;
+
+		vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
+
+		numVisuals_DescriptorSets = numVisuals;
+
+		uint32_t numDescriptorSets = numVisuals * getNumFramesInFlight();
+
+		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(getNumFramesInFlight());
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(numDescriptorSets);
 		allocInfo.pSetLayouts = layouts.data();
 
-		descriptorSets.resize(getNumFramesInFlight());
+		descriptorSets.resize(numDescriptorSets);
 		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
-		for (size_t i = 0; i < getNumFramesInFlight(); i++)
+		for (size_t i = 0; i < numDescriptorSets; i++)
 		{
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = uniformBuffers[i];
@@ -198,11 +212,17 @@ struct MainPipeline : public Pipeline<UBO>
 
 struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) override
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
 	{
 		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		OffscreenUBO ubo{ sceneData.offscreenMVP };
-		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+		std::vector<OffscreenUBO> ubos;
+		ubos.reserve(numVisuals);
+		for (int i = 0; i < numVisuals; i++)
+		{
+			ubos.emplace_back(sceneData.offscreenMVP);
+		}
+		size_t dataSize = sizeof(OffscreenUBO) * ubos.size();
+		memcpy(reinterpret_cast<char*>(uniformBuffersMapped) + currentImage * dataSize, ubos.data(), dataSize);
 	}
 
 	virtual void createDescriptorSetLayout() override
@@ -213,7 +233,6 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		uboLayoutBinding.pImmutableSamplers = nullptr;
 		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -226,7 +245,7 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		}
 	}
 
-	virtual void createDescriptorPool() override
+	virtual void createDescriptorPool(int maxNumVisuals) override
 	{
 		VkDescriptorPoolSize poolSize{};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -236,7 +255,7 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = static_cast<uint32_t>(getNumFramesInFlight());
+		poolInfo.maxSets = static_cast<uint32_t>(maxNumVisuals * getNumFramesInFlight());
 
 		if (vkCreateDescriptorPool(getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -244,22 +263,31 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		}
 	}
 
-	virtual void createDescriptorSets() override
+	virtual void createDescriptorSets(int numVisuals) override
 	{
+		if (numVisuals_DescriptorSets == numVisuals)
+			return;
+
+		vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
+
+		numVisuals_DescriptorSets = numVisuals;
+
+		uint32_t numDescriptorSets = numVisuals * getNumFramesInFlight();
+
 		std::vector<VkDescriptorSetLayout> layouts(getNumFramesInFlight(), descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(getNumFramesInFlight());
+		allocInfo.descriptorSetCount = numDescriptorSets;
 		allocInfo.pSetLayouts = layouts.data();
 
-		descriptorSets.resize(getNumFramesInFlight());
+		descriptorSets.resize(numDescriptorSets);
 		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 
-		for (size_t i = 0; i < getNumFramesInFlight(); i++)
+		for (size_t i = 0; i < numDescriptorSets; i++)
 		{
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = uniformBuffers[i];
@@ -276,11 +304,9 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 			descriptorWrites[0].descriptorCount = 1;
 			descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-
 			vkUpdateDescriptorSets(getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
 	}
-
 };
 
 void Renderer::init(GLFWwindow* window)
@@ -342,41 +368,52 @@ void Renderer::createTextureSampler()
 	}
 }
 
-void Renderer::updateUniformBuffer(uint32_t currentImage)
+void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<VisualComponent*>& visualComponents)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
-	model = glm::rotate(model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
+	std::vector<SceneDataForUniforms> sceneDatas;
+	sceneDatas.reserve(visualComponents.size());
+	for (auto visual : visualComponents)
+	{
+		glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
+		model = glm::rotate(model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
 
-	proj[1][1] *= -1;
+		proj[1][1] *= -1;
 
-	glm::vec3 light = glm::vec3(-5.0f, 5.0f, 5.0f);
+		glm::vec3 light = glm::vec3(-5.0f, 5.0f, 5.0f);
 
-	float orthoSize = 4.0f;
-	float nearPlane = 0.1f;
-	float farPlane = 10.0f;
+		float orthoSize = 4.0f;
+		float nearPlane = 0.1f;
+		float farPlane = 10.0f;
 
-	glm::vec3 lightDir = glm::normalize(light);
-	glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));
-	glm::mat4 lightProj = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
+		glm::vec3 lightDir = glm::normalize(light);
+		glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));
+		glm::mat4 lightProj = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
 
-	glm::mat4 offscreenMVP = lightProj * lightView * model;
+		glm::mat4 offscreenMVP = lightProj * lightView * model;
 
-	SceneDataForUniforms sceneDataForUniforms{};
-	sceneDataForUniforms.model = model;
-	sceneDataForUniforms.view = view;
-	sceneDataForUniforms.proj = proj;
-	sceneDataForUniforms.light = light;
-	sceneDataForUniforms.offscreenMVP = offscreenMVP;
+		SceneDataForUniforms sceneDataForUniforms{};
+		sceneDataForUniforms.model = model;
+		sceneDataForUniforms.view = view;
+		sceneDataForUniforms.proj = proj;
+		sceneDataForUniforms.light = light;
+		sceneDataForUniforms.offscreenMVP = offscreenMVP;
+		sceneDatas.push_back(sceneDataForUniforms);
+	}
 
-	pipeline->updateUniformBuffer(currentImage, &sceneDataForUniforms);
-	offscreenPipeline->updateUniformBuffer(currentImage, &sceneDataForUniforms);
+	pipeline->createUniformBuffers(visualComponents.size());
+	pipeline->createDescriptorSets(visualComponents.size());
+	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
+
+	offscreenPipeline->createUniformBuffers(visualComponents.size());
+	offscreenPipeline->createDescriptorSets(visualComponents.size());
+	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 }
 
 void Renderer::waitUntilDone()
@@ -443,14 +480,16 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		scissor.extent = { RendererImpl::shadowmapSize, RendererImpl::shadowmapSize };
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame], 0, nullptr);
-		
-		PushConstants constants;
-		constants.isPPLightingEnabled = isPPLightingEnabled;
-		vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
-
-		for (VisualComponent* vis : visualComponents)
+		for (int i = 0; i < visualComponents.size(); ++i)
 		{
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame * visualComponents.size() + i], 0, nullptr);
+
+			auto vis = visualComponents[i];
+
+			PushConstants constants;
+			constants.isPPLightingEnabled = isPPLightingEnabled;
+			vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+
 			VkBuffer vertexBuffers[] = { vis->getModel().getVertexBuffer() };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -496,14 +535,16 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		scissor.extent = impl.swapChainExtent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame], 0, nullptr);
-
-		PushConstants constants;
-		constants.isPPLightingEnabled = isPPLightingEnabled;
-		vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
-
-		for (VisualComponent* vis : visualComponents)
+		for (int i = 0; i < visualComponents.size(); ++i)
 		{
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame * visualComponents.size() + i], 0, nullptr);
+
+			auto vis = visualComponents[i];
+
+			PushConstants constants;
+			constants.isPPLightingEnabled = isPPLightingEnabled;
+			vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+
 			VkBuffer vertexBuffers[] = { vis->getModel().getVertexBuffer()};
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -529,9 +570,9 @@ void Renderer::PipelineBase::init(Renderer* renderer_, std::string_view shaderPa
 	renderer = renderer_;
 	createDescriptorSetLayout();
 	createGraphicsPipeline(shaderPath, renderPass, msaaSamples, numVertAttributes);
-	createUniformBuffers();
-	createDescriptorPool();
-	createDescriptorSets();
+	constexpr int maxNumVisuals = 100;
+	allocateUniformBuffersMemory(maxNumVisuals);
+	createDescriptorPool(maxNumVisuals);
 }
 
 void Renderer::PipelineBase::deinit()
@@ -539,8 +580,9 @@ void Renderer::PipelineBase::deinit()
 	for (size_t i = 0; i < getImpl().getNumFramesInFlight(); i++)
 	{
 		vkDestroyBuffer(getDevice(), uniformBuffers[i], nullptr);
-		vkFreeMemory(getDevice(), uniformBuffersMemory[i], nullptr);
 	}
+
+	vkFreeMemory(getDevice(), uniformBuffersMemory, nullptr);
 
 	vkDestroyDescriptorPool(getDevice(), descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(getDevice(), descriptorSetLayout, nullptr);
@@ -702,19 +744,51 @@ void Renderer::PipelineBase::createGraphicsPipeline(std::string_view shaderPath,
 	getImpl().destroyShaderModule(vertShaderModule);
 }
 
-void Renderer::PipelineBase::createUniformBuffers()
+void Renderer::PipelineBase::allocateUniformBuffersMemory(int maxNumVisuals)
 {
+	uint32_t memSize = getUBOSize() * maxNumVisuals * getNumFramesInFlight();
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memSize;
+	allocInfo.memoryTypeIndex = getImpl().findMemoryType(0xffffffff, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(getDevice(), &allocInfo, nullptr, &uniformBuffersMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate buffer memory!");
+	}
+	vkMapMemory(getDevice(), uniformBuffersMemory, 0, memSize, 0, &uniformBuffersMapped);
+}
+
+void Renderer::PipelineBase::createUniformBuffers(int numVisuals)
+{
+	if (numVisuals_Uniforms == numVisuals)
+		return;
+
+	for (size_t i = 0; i < numVisuals_Uniforms * getNumFramesInFlight(); i++)
+	{
+		vkDestroyBuffer(getDevice(), uniformBuffers[i], nullptr);
+	}
+
+	numVisuals_Uniforms = numVisuals;
+
 	VkDeviceSize bufferSize = getUBOSize();
 
-	uniformBuffers.resize(getNumFramesInFlight());
-	uniformBuffersMemory.resize(getNumFramesInFlight());
-	uniformBuffersMapped.resize(getNumFramesInFlight());
+	uniformBuffers.resize(numVisuals * getNumFramesInFlight());
 
-	for (size_t i = 0; i < getNumFramesInFlight(); i++)
+	for (size_t i = 0; i < numVisuals * getNumFramesInFlight(); i++)
 	{
-		getImpl().createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+		VkBufferCreateInfo bufferInfo{};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = bufferSize;
+		bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		vkMapMemory(getDevice(), uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+		if (vkCreateBuffer(getDevice(), &bufferInfo, nullptr, &uniformBuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create buffer!");
+		}
+
+		vkBindBufferMemory(getDevice(), uniformBuffers[i], uniformBuffersMemory, i * bufferSize);
 	}
 }
 

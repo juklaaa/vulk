@@ -1,9 +1,9 @@
 #pragma once
 
-#include "common.h"
-#include "renderer_impl.h"
-#include "model.h"
-#include "texture.h"
+#include "Common.h"
+#include "RendererImpl.h"
+#include "Model.h"
+#include "Texture.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -39,12 +39,13 @@ public:
 		virtual void createDescriptorSetLayout() = 0;
 		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
-		void createUniformBuffers();
-		virtual void createDescriptorPool() = 0; 
-		virtual void createDescriptorSets() = 0;
+		void allocateUniformBuffersMemory(int maxNumVisuals);
+		void createUniformBuffers(int numVisuals);
+		virtual void createDescriptorPool(int maxNumVisuals) = 0;
+		virtual void createDescriptorSets(int numVisuals) = 0;
 
 		virtual size_t getUBOSize() const = 0;
-		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms) = 0;
+		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) = 0;
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }
@@ -55,10 +56,12 @@ public:
 		VkPipeline graphicsPipeline;
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkBuffer> uniformBuffers;
-		std::vector<VkDeviceMemory> uniformBuffersMemory;
-		std::vector<void*> uniformBuffersMapped;
+		VkDeviceMemory uniformBuffersMemory;
+		void* uniformBuffersMapped;
 		VkDescriptorPool descriptorPool;
 		std::vector<VkDescriptorSet> descriptorSets;
+		int numVisuals_Uniforms = 0;
+		int numVisuals_DescriptorSets = 0;
 	};
 
 	Texture texture;
@@ -70,7 +73,7 @@ private:
 
 	void createTextureSampler();
 	
-	void updateUniformBuffer(uint32_t currentImage);
+	void updateUniformBuffer(uint32_t currentImage, const std::vector<VisualComponent*>& visualComponents);
 	
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, const std::vector<VisualComponent*>& visualComponents);
 	

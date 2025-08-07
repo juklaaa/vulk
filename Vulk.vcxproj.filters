@@ -26,13 +26,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\common.h">
+    <ClInclude Include="source\Common.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\rendering\renderer.h">
+    <ClInclude Include="source\rendering\Renderer.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="source\rendering\renderer_impl.h">
+    <ClInclude Include="source\rendering\RendererImpl.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="source\Engine\Actor.h">
@@ -50,21 +50,30 @@
     <ClInclude Include="source\Engine\Math\Math.h">
       <Filter>Source Files\Engine\Math</Filter>
     </ClInclude>
+    <ClInclude Include="source\Rendering\Model.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Rendering\Texture.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Rendering\VisualComponent.h">
+      <Filter>Source Files\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\rendering\renderer.cpp">
+    <ClCompile Include="source\rendering\Renderer.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="source\rendering\renderer_impl.cpp">
+    <ClCompile Include="source\rendering\RendererImpl.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="source\rendering\model.cpp">
+    <ClCompile Include="source\rendering\Model.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="source\rendering\texture.cpp">
+    <ClCompile Include="source\rendering\Texture.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="source\Engine\Actor.cpp">

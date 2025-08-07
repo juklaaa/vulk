@@ -90,24 +90,27 @@
     <None Include="shaders\shader.vert" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\common.h" />
+    <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\Engine\Actor.h" />
     <ClInclude Include="source\Engine\Component.h" />
     <ClInclude Include="source\Engine\Math\Math.h" />
     <ClInclude Include="source\Engine\Scene.h" />
     <ClInclude Include="source\Engine\TransformComponent.h" />
-    <ClInclude Include="source\rendering\renderer.h" />
-    <ClInclude Include="source\rendering\renderer_impl.h" />
+    <ClInclude Include="source\Rendering\Model.h" />
+    <ClInclude Include="source\rendering\Renderer.h" />
+    <ClInclude Include="source\rendering\RendererImpl.h" />
+    <ClInclude Include="source\Rendering\Texture.h" />
+    <ClInclude Include="source\Rendering\VisualComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Engine\Actor.cpp" />
     <ClCompile Include="source\Engine\Component.cpp" />
     <ClCompile Include="source\Engine\Scene.cpp" />
     <ClCompile Include="source\main.cpp" />
-    <ClCompile Include="source\rendering\model.cpp" />
-    <ClCompile Include="source\rendering\renderer.cpp" />
-    <ClCompile Include="source\rendering\renderer_impl.cpp" />
-    <ClCompile Include="source\rendering\texture.cpp" />
+    <ClCompile Include="source\rendering\Model.cpp" />
+    <ClCompile Include="source\rendering\Renderer.cpp" />
+    <ClCompile Include="source\rendering\RendererImpl.cpp" />
+    <ClCompile Include="source\rendering\Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

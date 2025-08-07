@@ -9,12 +9,14 @@ Scene::~Scene()
 Actor* Scene::addActor()
 {
 	Actor* newActor = new Actor;
+	newActor->scene = this;
 	actors.push_back(newActor);
 	return newActor;
 }
 
 Actor* Scene::addActor(Actor* actor)
 {
+	actor->scene = this;
 	actors.push_back(actor);
 	return actor;
 }

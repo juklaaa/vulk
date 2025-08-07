@@ -5,6 +5,10 @@
 struct V4
 {
 	V4() = default;
+	V4(float x_, float y_, float z_, float w_)
+		:x(x_), y(y_), z(z_), w(w_)
+	{
+	}
 
 	float& operator[] (int index)
 	{
@@ -13,6 +17,20 @@ struct V4
 		if (index == 2) return z;
 		if (index == 3) return w;
 		throw std::runtime_error("Wrong index");
+	}
+
+	const float& operator[] (int index) const
+	{
+		if (index == 0) return x;
+		if (index == 1) return y;
+		if (index == 2) return z;
+		if (index == 3) return w;
+		throw std::runtime_error("Wrong index");
+	}
+
+	float dot(V4 v) const
+	{
+		return x * v.x + y * v.y + z * v.z + w * v.w;
 	}
 
 	float x;
@@ -34,6 +52,19 @@ struct Mtx
 		m.rows[2][2] = 1.0f;
 		m.rows[3][3] = 1.0f;
 		return m;
+	}
+
+	V4 getColumn(int i) const
+	{
+		return V4(rows[0][i], rows[1][i], rows[2][i], rows[3][i]);
+	}
+
+	Mtx operator * (const Mtx& mtx) const
+	{
+		Mtx m;
+		for (int i = 0; i < 4; ++i)
+			for (int j = 0; j < 4; ++j)
+				m.rows[i][j] = rows[i].dot(mtx.getColumn(j));
 	}
 
 	V4 rows[4];
