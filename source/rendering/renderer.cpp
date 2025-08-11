@@ -125,16 +125,18 @@ struct MainPipeline : public Pipeline<UBO>
 		}
 	}
 
-	virtual void createDescriptorSets(int numVisuals) override
+	virtual void createDescriptorSets(int numVisuals, int currentImage) override
 	{
-		if (numVisuals_DescriptorSets == numVisuals)
+		if (numVisuals_DescriptorSets[currentImage] == numVisuals)
 			return;
-		if(descriptorSets.size() > 0)
-			vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
 
-		numVisuals_DescriptorSets = numVisuals;
+		auto& set = descriptorSets[currentImage];
+		if (!set.empty())
+			vkFreeDescriptorSets(getDevice(), descriptorPool, set.size(), set.data());
 
-		uint32_t numDescriptorSets = numVisuals * getNumFramesInFlight();
+		numVisuals_DescriptorSets[currentImage] = numVisuals;
+
+		uint32_t numDescriptorSets = numVisuals;
 
 		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
@@ -143,8 +145,8 @@ struct MainPipeline : public Pipeline<UBO>
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(numDescriptorSets);
 		allocInfo.pSetLayouts = layouts.data();
 
-		descriptorSets.resize(numDescriptorSets);
-		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+		set.resize(numDescriptorSets);
+		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, set.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
@@ -152,7 +154,7 @@ struct MainPipeline : public Pipeline<UBO>
 		for (size_t i = 0; i < numDescriptorSets; i++)
 		{
 			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = uniformBuffers[i];
+			bufferInfo.buffer = uniformBuffers[currentImage][i];
 			bufferInfo.offset = 0;
 			bufferInfo.range = getUBOSize();
 
@@ -174,7 +176,7 @@ struct MainPipeline : public Pipeline<UBO>
 			std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = descriptorSets[i];
+			descriptorWrites[0].dstSet = set[i];
 			descriptorWrites[0].dstBinding = 0;
 			descriptorWrites[0].dstArrayElement = 0;
 			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -182,7 +184,7 @@ struct MainPipeline : public Pipeline<UBO>
 			descriptorWrites[0].pBufferInfo = &bufferInfo;
 
 			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = descriptorSets[i];
+			descriptorWrites[1].dstSet = set[i];
 			descriptorWrites[1].dstBinding = 1;
 			descriptorWrites[1].dstArrayElement = 0;
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -190,7 +192,7 @@ struct MainPipeline : public Pipeline<UBO>
 			descriptorWrites[1].pImageInfo = &imageInfo;
 
 			descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[2].dstSet = descriptorSets[i];
+			descriptorWrites[2].dstSet = set[i];
 			descriptorWrites[2].dstBinding = 2;
 			descriptorWrites[2].dstArrayElement = 0;
 			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -198,7 +200,7 @@ struct MainPipeline : public Pipeline<UBO>
 			descriptorWrites[2].pImageInfo = &normalMapInfo;
 
 			descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[3].dstSet = descriptorSets[i];
+			descriptorWrites[3].dstSet = set[i];
 			descriptorWrites[3].dstBinding = 3;
 			descriptorWrites[3].dstArrayElement = 0;
 			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -221,8 +223,8 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		{
 			ubos.emplace_back(sceneData.offscreenMVP);
 		}
-		size_t dataSize = sizeof(OffscreenUBO) * ubos.size();
-		memcpy(reinterpret_cast<char*>(uniformBuffersMapped) + currentImage * dataSize, ubos.data(), dataSize);
+		size_t dataSize = uniformMemReq.size * numVisuals;
+		memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + dataSize, ubos.data(), dataSize);
 	}
 
 	virtual void createDescriptorSetLayout() override
@@ -263,16 +265,18 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		}
 	}
 
-	virtual void createDescriptorSets(int numVisuals) override
+	virtual void createDescriptorSets(int numVisuals, int currentImage) override
 	{
-		if (numVisuals_DescriptorSets == numVisuals)
+		if (numVisuals_DescriptorSets[currentImage] == numVisuals)
 			return;
-		if (descriptorSets.size() > 0)
-			vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
 
-		numVisuals_DescriptorSets = numVisuals;
+		auto& set = descriptorSets[currentImage];
+		if (!set.empty())
+			vkFreeDescriptorSets(getDevice(), descriptorPool, set.size(), set.data());
 
-		uint32_t numDescriptorSets = numVisuals * getNumFramesInFlight();
+		numVisuals_DescriptorSets[currentImage] = numVisuals;
+
+		uint32_t numDescriptorSets = numVisuals;
 
 		std::vector<VkDescriptorSetLayout> layouts(getNumFramesInFlight(), descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
@@ -281,8 +285,8 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		allocInfo.descriptorSetCount = numDescriptorSets;
 		allocInfo.pSetLayouts = layouts.data();
 
-		descriptorSets.resize(numDescriptorSets);
-		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+		set.resize(numDescriptorSets);
+		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, set.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
@@ -290,14 +294,14 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		for (size_t i = 0; i < numDescriptorSets; i++)
 		{
 			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = uniformBuffers[i];
+			bufferInfo.buffer = uniformBuffers[currentImage][i];
 			bufferInfo.offset = 0;
 			bufferInfo.range = getUBOSize();
 
 			std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
 
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = descriptorSets[i];
+			descriptorWrites[0].dstSet = set[i];
 			descriptorWrites[0].dstBinding = 0;
 			descriptorWrites[0].dstArrayElement = 0;
 			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -378,10 +382,11 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 	sceneDatas.reserve(visualComponents.size());
 	for (auto visual : visualComponents)
 	{
-		glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
-		model = glm::rotate(model, time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		auto worldTransform = visual->getActor()->getTransformComponent().getWorldTransform();
+		glm::mat4 model;
+		static_assert(sizeof(Mtx) == sizeof(glm::mat4));
+		memcpy(&model, &worldTransform, sizeof(Mtx));
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
 
 		proj[1][1] *= -1;
@@ -407,12 +412,12 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		sceneDatas.push_back(sceneDataForUniforms);
 	}
 
-	pipeline->createUniformBuffers(visualComponents.size());
-	pipeline->createDescriptorSets(visualComponents.size());
+	pipeline->createUniformBuffers(visualComponents.size(), currentImage);
+	pipeline->createDescriptorSets(visualComponents.size(), currentImage);
 	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 
-	offscreenPipeline->createUniformBuffers(visualComponents.size());
-	offscreenPipeline->createDescriptorSets(visualComponents.size());
+	offscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
+	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage);
 	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 }
 
@@ -436,7 +441,7 @@ void Renderer::drawFrame(Scene& scene, bool framebufferResized, bool isPPLightin
 	impl.drawFrame(visualComponents, framebufferResized);
 }
 
-void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, const std::vector<VisualComponent*>& visualComponents)
+void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapchainImageIndex, const std::vector<VisualComponent*>& visualComponents)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -482,7 +487,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 		for (int i = 0; i < visualComponents.size(); ++i)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame * visualComponents.size() + i], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
 
 			auto vis = visualComponents[i];
 
@@ -490,13 +495,13 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			constants.isPPLightingEnabled = isPPLightingEnabled;
 			vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
 
-			VkBuffer vertexBuffers[] = { vis->getModel().getVertexBuffer() };
+			VkBuffer vertexBuffers[] = { vis->getModel()->getVertexBuffer() };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-			vkCmdBindIndexBuffer(commandBuffer, vis->getModel().getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, vis->getModel()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(commandBuffer, vis->getModel().getNumIndices(), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, vis->getModel()->getNumIndices(), 1, 0, 0, 0);
 		}
 
 		vkCmdEndRenderPass(commandBuffer);
@@ -506,7 +511,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = impl.renderPass;
-		renderPassInfo.framebuffer = impl.swapChainFramebuffers[imageIndex];
+		renderPassInfo.framebuffer = impl.swapChainFramebuffers[swapchainImageIndex];
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = impl.swapChainExtent;
 
@@ -537,7 +542,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 		for (int i = 0; i < visualComponents.size(); ++i)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame * visualComponents.size() + i], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
 
 			auto vis = visualComponents[i];
 
@@ -545,13 +550,13 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			constants.isPPLightingEnabled = isPPLightingEnabled;
 			vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
 
-			VkBuffer vertexBuffers[] = { vis->getModel().getVertexBuffer()};
+			VkBuffer vertexBuffers[] = { vis->getModel()->getVertexBuffer()};
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-			vkCmdBindIndexBuffer(commandBuffer, vis->getModel().getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, vis->getModel()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(commandBuffer, vis->getModel().getNumIndices(), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, vis->getModel()->getNumIndices(), 1, 0, 0, 0);
 		}
 
 		vkCmdEndRenderPass(commandBuffer);
@@ -568,6 +573,25 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 void Renderer::PipelineBase::init(Renderer* renderer_, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
 	renderer = renderer_;
+
+	memset(numVisuals_Uniforms, 0, sizeof(numVisuals_Uniforms));
+	memset(numVisuals_DescriptorSets, 0, sizeof(numVisuals_DescriptorSets));
+
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = getUBOSize();
+	bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	VkBuffer sampleBuffer;
+	if (vkCreateBuffer(getDevice(), &bufferInfo, nullptr, &sampleBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create buffer!");
+	}
+
+	vkGetBufferMemoryRequirements(getDevice(), sampleBuffer, &uniformMemReq);
+	vkDestroyBuffer(getDevice(), sampleBuffer, nullptr);
+
 	createDescriptorSetLayout();
 	createGraphicsPipeline(shaderPath, renderPass, msaaSamples, numVertAttributes);
 	constexpr int maxNumVisuals = 100;
@@ -579,10 +603,10 @@ void Renderer::PipelineBase::deinit()
 {
 	for (size_t i = 0; i < getImpl().getNumFramesInFlight(); i++)
 	{
-		vkDestroyBuffer(getDevice(), uniformBuffers[i], nullptr);
+		for (auto buffer : uniformBuffers[i])
+			vkDestroyBuffer(getDevice(), buffer, nullptr);
+		vkFreeMemory(getDevice(), uniformBuffersMemory[i], nullptr);
 	}
-
-	vkFreeMemory(getDevice(), uniformBuffersMemory, nullptr);
 
 	vkDestroyDescriptorPool(getDevice(), descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(getDevice(), descriptorSetLayout, nullptr);
@@ -746,36 +770,38 @@ void Renderer::PipelineBase::createGraphicsPipeline(std::string_view shaderPath,
 
 void Renderer::PipelineBase::allocateUniformBuffersMemory(int maxNumVisuals)
 {
-	uint32_t memSize = getUBOSize() * maxNumVisuals * getNumFramesInFlight();
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memSize;
-	allocInfo.memoryTypeIndex = getImpl().findMemoryType(0xffffffff, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	if (vkAllocateMemory(getDevice(), &allocInfo, nullptr, &uniformBuffersMemory) != VK_SUCCESS)
+	for (int currentImage = 0; currentImage < getImpl().getNumFramesInFlight(); currentImage++)
 	{
-		throw std::runtime_error("failed to allocate buffer memory!");
+		uint32_t memSize = uniformMemReq.size * maxNumVisuals * getNumFramesInFlight();
+		VkMemoryAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memSize;
+		allocInfo.memoryTypeIndex = getImpl().findMemoryType(uniformMemReq.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		if (vkAllocateMemory(getDevice(), &allocInfo, nullptr, &uniformBuffersMemory[currentImage]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate buffer memory!");
+		}
+		vkMapMemory(getDevice(), uniformBuffersMemory[currentImage], 0, memSize, 0, &uniformBuffersMapped[currentImage]);
 	}
-	vkMapMemory(getDevice(), uniformBuffersMemory, 0, memSize, 0, &uniformBuffersMapped);
 }
 
-void Renderer::PipelineBase::createUniformBuffers(int numVisuals)
+void Renderer::PipelineBase::createUniformBuffers(int numVisuals, int frameIndex)
 {
-	if (numVisuals_Uniforms == numVisuals)
+	if (numVisuals_Uniforms[frameIndex] == numVisuals)
 		return;
 
-	for (size_t i = 0; i < numVisuals_Uniforms * getNumFramesInFlight(); i++)
-	{
-		vkDestroyBuffer(getDevice(), uniformBuffers[i], nullptr);
-	}
+	auto& uniforms = uniformBuffers[frameIndex];
+	for (auto buffer : uniforms)
+		vkDestroyBuffer(getDevice(), buffer, nullptr);
 
-	numVisuals_Uniforms = numVisuals;
+	numVisuals_Uniforms[frameIndex] = numVisuals;
 
 	VkDeviceSize bufferSize = getUBOSize();
 
-	uniformBuffers.resize(numVisuals * getNumFramesInFlight());
+	uniforms.resize(numVisuals);
 
-	for (size_t i = 0; i < numVisuals * getNumFramesInFlight(); i++)
+	for (size_t i = 0; i < numVisuals; i++)
 	{
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -783,20 +809,12 @@ void Renderer::PipelineBase::createUniformBuffers(int numVisuals)
 		bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(getDevice(), &bufferInfo, nullptr, &uniformBuffers[i]) != VK_SUCCESS)
+		if (vkCreateBuffer(getDevice(), &bufferInfo, nullptr, &uniforms[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create buffer!");
 		}
 
-
-		uint32_t memorySize = 64;
-		int j = 1;
-		while (memorySize*j < i * bufferSize)
-		{
-			j++;
-		}
-		memorySize *= j;
-		vkBindBufferMemory(getDevice(), uniformBuffers[i], uniformBuffersMemory, memorySize);
+		vkBindBufferMemory(getDevice(), uniforms[i], uniformBuffersMemory[frameIndex], i * uniformMemReq.size);
 	}
 }
 

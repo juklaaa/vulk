@@ -14,3 +14,5 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector> 
+
+using uint = unsigned int;

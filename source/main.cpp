@@ -25,8 +25,8 @@ public:
 		rabbitModel.load(&renderer, "models/stanford_bunny.obj");
 		Model floorModel;
 		floorModel.load(&renderer, "models/cube.obj");
-		scene.addActor()->addComponent<VisualComponent>()->setModel(rabbitModel);
-		scene.addActor()->addComponent<VisualComponent>()->setModel(floorModel);
+		scene.addActor()->addComponent<VisualComponent>()->setModel(&rabbitModel);
+		scene.addActor()->addComponent<VisualComponent>()->setModel(&floorModel);
 
 		mainLoop();
 
@@ -74,7 +74,7 @@ private:
 
 	void mainLoop()
 	{
-		auto tlast = std::chrono::high_resolution_clock::time_point();
+		auto tlast = std::chrono::high_resolution_clock::now();
 		float minFrameTime = std::numeric_limits<float>::max();
 		while (!glfwWindowShouldClose(window))
 		{
@@ -85,6 +85,7 @@ private:
 			minFrameTime = frameTime < minFrameTime ? frameTime : minFrameTime;
 
 			glfwPollEvents();
+
 			scene.tick(frameTime);
 			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
 		}

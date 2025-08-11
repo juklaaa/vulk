@@ -7,11 +7,11 @@ class VisualComponent : public Component
 {
 public:
 
-	const Model& getModel() const { return model; }
-	void setModel(const Model& model_) { model = model_; }
+	const Model* getModel() const { return model; }
+	void setModel(const Model* model_) { model = model_; }
 
 protected:
 
 private:
-	Model model;
+	const Model* model = nullptr;
 };
