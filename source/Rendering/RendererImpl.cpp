@@ -9,8 +9,6 @@
 
 #include <stdlib.h>
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
-
 const std::vector<const char*> validationLayers =
 {
 	"VK_LAYER_KHRONOS_validation"
@@ -83,7 +81,7 @@ void RendererImpl::deinit()
 		vkDestroyFramebuffer(device, shadowmapFramebuffer, nullptr);
 	}
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	for (size_t i = 0; i < getNumFramesInFlightStatic(); i++)
 	{
 		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
 		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -165,7 +163,7 @@ void RendererImpl::drawFrame(const std::vector<VisualComponent*>& visualComponen
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	currentFrame = (currentFrame + 1) % getNumFramesInFlightStatic();
 }
 
 VkImageView RendererImpl::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
@@ -934,13 +932,13 @@ void RendererImpl::createShadowmapFramebuffer()
 
 void RendererImpl::createCommandBuffers()
 {
-	commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	commandBuffers.resize(getNumFramesInFlightStatic());
 
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+	allocInfo.commandBufferCount = getNumFramesInFlightStatic();
 
 	if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
 	{
@@ -950,9 +948,9 @@ void RendererImpl::createCommandBuffers()
 
 void RendererImpl::createSyncObjects()
 {
-	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+	imageAvailableSemaphores.resize(getNumFramesInFlightStatic());
+	renderFinishedSemaphores.resize(getNumFramesInFlightStatic());
+	inFlightFences.resize(getNumFramesInFlightStatic());
 
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -961,7 +959,7 @@ void RendererImpl::createSyncObjects()
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	for (size_t i = 0; i < getNumFramesInFlightStatic(); i++)
 	{
 		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
 			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
@@ -1301,5 +1299,5 @@ void RendererImpl::transitionImageLayout(VkImage image, VkFormat format, VkImage
 
 unsigned int RendererImpl::getNumFramesInFlight() const
 {
-	return MAX_FRAMES_IN_FLIGHT;
+	return getNumFramesInFlightStatic();
 }

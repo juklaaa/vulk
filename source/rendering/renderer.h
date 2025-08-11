@@ -40,9 +40,9 @@ public:
 		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
 		void allocateUniformBuffersMemory(int maxNumVisuals);
-		void createUniformBuffers(int numVisuals);
+		void createUniformBuffers(int numVisuals, int currentImage);
 		virtual void createDescriptorPool(int maxNumVisuals) = 0;
-		virtual void createDescriptorSets(int numVisuals) = 0;
+		virtual void createDescriptorSets(int numVisuals, int currentImage) = 0;
 
 		virtual size_t getUBOSize() const = 0;
 		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) = 0;
@@ -55,13 +55,14 @@ public:
 		VkPipelineLayout pipelineLayout;
 		VkPipeline graphicsPipeline;
 		VkDescriptorSetLayout descriptorSetLayout;
-		std::vector<VkBuffer> uniformBuffers;
-		VkDeviceMemory uniformBuffersMemory;
-		void* uniformBuffersMapped;
+		std::vector<VkBuffer> uniformBuffers[RendererImpl::getNumFramesInFlightStatic()];
+		VkDeviceMemory uniformBuffersMemory[RendererImpl::getNumFramesInFlightStatic()];
+		void* uniformBuffersMapped[RendererImpl::getNumFramesInFlightStatic()];
 		VkDescriptorPool descriptorPool;
-		std::vector<VkDescriptorSet> descriptorSets;
-		int numVisuals_Uniforms = 0;
-		int numVisuals_DescriptorSets = 0;
+		std::vector<VkDescriptorSet> descriptorSets[RendererImpl::getNumFramesInFlightStatic()];
+		int numVisuals_Uniforms[RendererImpl::getNumFramesInFlightStatic()];
+		int numVisuals_DescriptorSets[RendererImpl::getNumFramesInFlightStatic()];
+		VkMemoryRequirements uniformMemReq;
 	};
 
 	Texture texture;
@@ -75,7 +76,7 @@ private:
 	
 	void updateUniformBuffer(uint32_t currentImage, const std::vector<VisualComponent*>& visualComponents);
 	
-	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, const std::vector<VisualComponent*>& visualComponents);
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapchainImageIndex, const std::vector<VisualComponent*>& visualComponents);
 	
 	RendererImpl impl;
 

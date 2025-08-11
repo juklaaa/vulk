@@ -1,10 +1,14 @@
 #pragma once
 
-#include <exception>
+#include <stdexcept>
 
 struct V4
 {
 	V4() = default;
+	V4(float x_, float y_, float z_)
+		:x(x_), y(y_), z(z_), w(0)
+	{
+	}
 	V4(float x_, float y_, float z_, float w_)
 		:x(x_), y(y_), z(z_), w(w_)
 	{
@@ -43,13 +47,35 @@ struct Mtx
 {
 	Mtx() = default;
 
-	static Mtx Indentity() 
+	static Mtx indentity() 
 	{ 
 		Mtx m;
 		memset(&m, 0, sizeof(m));
 		m.rows[0][0] = 1.0f;
 		m.rows[1][1] = 1.0f;
 		m.rows[2][2] = 1.0f;
+		m.rows[3][3] = 1.0f;
+		return m;
+	}
+
+	static Mtx rotation(V4 euler)
+	{
+		Mtx m;
+		memset(&m, 0, sizeof(m));
+		m.rows[0] = {cosf(euler.z), -sinf(euler.z), 0.0f};
+		m.rows[1] = {sinf(euler.z), cosf(euler.z), 0.0f};
+		m.rows[2] = {0.0f, 0.0f, 1.0f};
+		return m;
+	}
+
+	static Mtx translation(V4 vec)
+	{
+		Mtx m;
+		memset(&m, 0, sizeof(m));
+		m.rows[0][0] = 1.0f;
+		m.rows[1][1] = 1.0f;
+		m.rows[2][2] = 1.0f;
+		m.rows[3] = vec;
 		m.rows[3][3] = 1.0f;
 		return m;
 	}
@@ -65,6 +91,8 @@ struct Mtx
 		for (int i = 0; i < 4; ++i)
 			for (int j = 0; j < 4; ++j)
 				m.rows[i][j] = rows[i].dot(mtx.getColumn(j));
+
+		return m;
 	}
 
 	V4 rows[4];

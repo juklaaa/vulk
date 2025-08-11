@@ -10,6 +10,7 @@ class Actor
 {
 public:
 
+	Actor();
 	virtual ~Actor();
 
 	Scene* getScene() const { return scene; }
@@ -19,6 +20,7 @@ public:
 	ComponentType* addComponent()
 	{
 		auto newComp = new ComponentType;
+		newComp->setActor(this);
 		components.push_back(newComp);
 		return newComp;
 	}

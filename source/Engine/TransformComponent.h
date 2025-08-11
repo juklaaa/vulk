@@ -16,7 +16,7 @@ private:
 
 	void updateWorldTransform();
 
-	Mtx transform = Mtx::Indentity();
-	Mtx worldTransform = Mtx::Indentity();
-	bool dirty = true;
+	Mtx transform = Mtx::indentity();
+	mutable Mtx worldTransform = Mtx::indentity();
+	mutable bool dirty = true;
 };

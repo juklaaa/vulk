@@ -1,4 +1,5 @@
 #include "TransformComponent.h"
+#include "Scene.h"
 
 void TransformComponent::updateWorldTransform()
 {
@@ -13,9 +14,9 @@ void TransformComponent::updateWorldTransform()
 
 const Mtx& TransformComponent::getWorldTransform() const
 {
-	if (dirty)
+	//if (dirty)
 	{
-		updateWorldTransform();
+		const_cast<TransformComponent*>(this)->updateWorldTransform();
 		dirty = false;
 	}
 

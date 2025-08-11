@@ -1,5 +1,10 @@
 #include "Actor.h"
 
+Actor::Actor()
+{
+	transformComponent.setActor(this);
+}
+
 Actor::~Actor()
 {
 	for (Component* component : components)
