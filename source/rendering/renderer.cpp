@@ -129,8 +129,8 @@ struct MainPipeline : public Pipeline<UBO>
 	{
 		if (numVisuals_DescriptorSets == numVisuals)
 			return;
-
-		vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
+		if(descriptorSets.size() > 0)
+			vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
 
 		numVisuals_DescriptorSets = numVisuals;
 
@@ -267,8 +267,8 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 	{
 		if (numVisuals_DescriptorSets == numVisuals)
 			return;
-
-		vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
+		if (descriptorSets.size() > 0)
+			vkFreeDescriptorSets(getDevice(), descriptorPool, descriptorSets.size(), descriptorSets.data());
 
 		numVisuals_DescriptorSets = numVisuals;
 
@@ -788,7 +788,15 @@ void Renderer::PipelineBase::createUniformBuffers(int numVisuals)
 			throw std::runtime_error("failed to create buffer!");
 		}
 
-		vkBindBufferMemory(getDevice(), uniformBuffers[i], uniformBuffersMemory, i * bufferSize);
+
+		uint32_t memorySize = 64;
+		int j = 1;
+		while (memorySize*j < i * bufferSize)
+		{
+			j++;
+		}
+		memorySize *= j;
+		vkBindBufferMemory(getDevice(), uniformBuffers[i], uniformBuffersMemory, memorySize);
 	}
 }
 
