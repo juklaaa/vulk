@@ -1297,7 +1297,7 @@ void RendererImpl::transitionImageLayout(VkImage image, VkFormat format, VkImage
 	endSingleTimeCommands(commandBuffer);
 }
 
-unsigned int RendererImpl::getNumFramesInFlight() const
+uint RendererImpl::getNumFramesInFlight() const
 {
 	return getNumFramesInFlightStatic();
 }

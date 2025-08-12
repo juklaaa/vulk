@@ -74,8 +74,8 @@ public:
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
-	unsigned int getNumFramesInFlight() const;
-	static constexpr unsigned int getNumFramesInFlightStatic()
+	uint getNumFramesInFlight() const;
+	static constexpr uint getNumFramesInFlightStatic()
 	{
 		return 2;
 	}
