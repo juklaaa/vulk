@@ -25,8 +25,13 @@ public:
 		rabbitModel.load(&renderer, "models/stanford_bunny.obj");
 		Model floorModel;
 		floorModel.load(&renderer, "models/cube.obj");
-		scene.addActor()->addComponent<VisualComponent>()->setModel(&rabbitModel);
-		scene.addActor()->addComponent<VisualComponent>()->setModel(&floorModel);
+		auto bunnyActor = scene.addActor();
+		bunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
+		bunnyActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
+
+		auto floorActor = scene.addActor();
+		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
+		floorActor->getTransformComponent().setTransform(Mtx::rotation({ 1.57f, 0.0f, 0.0f }));
 
 		mainLoop();
 
@@ -86,6 +91,7 @@ private:
 
 			glfwPollEvents();
 
+			scene.getTransformComponent().setTransform(Mtx::translation({ 0.0f, 2.0f, 0.0f }));
 			scene.tick(frameTime);
 			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
 		}

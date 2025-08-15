@@ -49,21 +49,17 @@ struct MainPipeline : public Pipeline<UBO>
 {
 	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
 	{
-		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		std::vector<UBO> ubos;
-		ubos.reserve(numVisuals);
+		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
 		for (int i = 0; i < numVisuals; i++)
 		{
 			UBO ubo{};
-			ubo.model = sceneData.model;
-			ubo.view = sceneData.view;
-			ubo.proj = sceneData.proj;
-			ubo.light = sceneData.light;
-			ubo.depthMVP = sceneData.offscreenMVP;
-			ubos.push_back(ubo);
+			ubo.model = sceneData[i].model;
+			ubo.view = sceneData[i].view;
+			ubo.proj = sceneData[i].proj;
+			ubo.light = sceneData[i].light;
+			ubo.depthMVP = sceneData[i].offscreenMVP;
+			memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, &ubo, sizeof(ubo));
 		}
-		size_t dataSize = sizeof(UBO) * ubos.size();
-		memcpy(reinterpret_cast<char*>(uniformBuffersMapped) + currentImage * dataSize, ubos.data(), dataSize);
 	}
 
 	virtual void createDescriptorSetLayout() override
@@ -102,22 +98,22 @@ struct MainPipeline : public Pipeline<UBO>
 	{
 		std::array<VkDescriptorPoolSize, 4> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
+		poolSizes[0].descriptorCount = maxNumVisuals * getNumFramesInFlight();
 
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
+		poolSizes[1].descriptorCount = maxNumVisuals * getNumFramesInFlight();
 
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[2].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
+		poolSizes[2].descriptorCount = maxNumVisuals * getNumFramesInFlight();
 
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[3].descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
+		poolSizes[3].descriptorCount = maxNumVisuals * getNumFramesInFlight();
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.poolSizeCount = poolSizes.size();
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(maxNumVisuals * getNumFramesInFlight());
+		poolInfo.maxSets = maxNumVisuals * getNumFramesInFlight();
 
 		if (vkCreateDescriptorPool(getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -216,15 +212,13 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 {
 	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
 	{
-		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		std::vector<OffscreenUBO> ubos;
-		ubos.reserve(numVisuals);
+		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
 		for (int i = 0; i < numVisuals; i++)
 		{
-			ubos.emplace_back(sceneData.offscreenMVP);
+			OffscreenUBO ubo;
+			ubo.MVP = sceneData[i].offscreenMVP;
+			memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, &ubo, sizeof(ubo));
 		}
-		size_t dataSize = uniformMemReq.size * numVisuals;
-		memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + dataSize, ubos.data(), dataSize);
 	}
 
 	virtual void createDescriptorSetLayout() override
@@ -238,7 +232,7 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount =1;
+		layoutInfo.bindingCount = 1;
 		layoutInfo.pBindings = &uboLayoutBinding;
 
 		if (vkCreateDescriptorSetLayout(getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
@@ -251,13 +245,13 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 	{
 		VkDescriptorPoolSize poolSize{};
 		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = static_cast<uint32_t>(getNumFramesInFlight());
+		poolSize.descriptorCount = maxNumVisuals * getNumFramesInFlight();
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = static_cast<uint32_t>(maxNumVisuals * getNumFramesInFlight());
+		poolInfo.maxSets = maxNumVisuals * getNumFramesInFlight();
 
 		if (vkCreateDescriptorPool(getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
@@ -386,7 +380,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		glm::mat4 model;
 		static_assert(sizeof(Mtx) == sizeof(glm::mat4));
 		memcpy(&model, &worldTransform, sizeof(Mtx));
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
 
 		proj[1][1] *= -1;
@@ -772,7 +766,7 @@ void Renderer::PipelineBase::allocateUniformBuffersMemory(int maxNumVisuals)
 {
 	for (int currentImage = 0; currentImage < getImpl().getNumFramesInFlight(); currentImage++)
 	{
-		uint32_t memSize = uniformMemReq.size * maxNumVisuals * getNumFramesInFlight();
+		uint32_t memSize = uniformMemReq.size * maxNumVisuals;
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memSize;

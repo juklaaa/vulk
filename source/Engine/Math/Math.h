@@ -47,8 +47,8 @@ struct Mtx
 {
 	Mtx() = default;
 
-	static Mtx indentity() 
-	{ 
+	static Mtx indentity()
+	{
 		Mtx m;
 		memset(&m, 0, sizeof(m));
 		m.rows[0][0] = 1.0f;
@@ -62,9 +62,13 @@ struct Mtx
 	{
 		Mtx m;
 		memset(&m, 0, sizeof(m));
-		m.rows[0] = {cosf(euler.z), -sinf(euler.z), 0.0f};
-		m.rows[1] = {sinf(euler.z), cosf(euler.z), 0.0f};
-		m.rows[2] = {0.0f, 0.0f, 1.0f};
+		float ca = cosf(euler.x); float sa = sinf(euler.x);
+		float cb = cosf(euler.y); float sb = sinf(euler.y);
+		float cg = cosf(euler.z); float sg = sinf(euler.z);
+		m.rows[0] = { cb * cg, sa * sb * cg - ca * sg, ca * sb * cg + sa * sg };
+		m.rows[1] = { cb * sg, sa * sb * sg + ca * cg, ca * sb * sg - sa * cg };
+		m.rows[2] = { -sb, sa * cb, ca * cb };
+		m.rows[3][3] = 1.0f;
 		return m;
 	}
 

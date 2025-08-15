@@ -49,7 +49,7 @@ public:
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }
-		int getNumFramesInFlight() const { return renderer->impl.getNumFramesInFlight(); }
+		uint getNumFramesInFlight() const { return renderer->impl.getNumFramesInFlight(); }
 
 		Renderer* renderer = nullptr;
 		VkPipelineLayout pipelineLayout;
