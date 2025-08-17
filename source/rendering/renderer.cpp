@@ -2,9 +2,8 @@
 #include "Engine/Scene.h"
 #include "VisualComponent.h"
 
-const std::string MODEL_PATH = "models/stanford_bunny.obj";
-const std::string TEXTURE_PATH = "textures/stanford_bunny.jpg";
-const std::string NORMAL_MAP_PATH = "textures/stanford_bunny_normal.png";
+const std::string TEXTURE_PATH = "textures/deafult_texture.jpg";
+const std::string NORMAL_MAP_PATH = "textures/deafult_normal.png";
 
 std::vector<char> readFile(const std::string& filename);
 
@@ -121,7 +120,7 @@ struct MainPipeline : public Pipeline<UBO>
 		}
 	}
 
-	virtual void createDescriptorSets(int numVisuals, int currentImage) override
+	virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) override
 	{
 		if (numVisuals_DescriptorSets[currentImage] == numVisuals)
 			return;
@@ -154,14 +153,22 @@ struct MainPipeline : public Pipeline<UBO>
 			bufferInfo.offset = 0;
 			bufferInfo.range = getUBOSize();
 
-			VkDescriptorImageInfo imageInfo{};
+			VkDescriptorImageInfo imageInfo{};	
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = renderer->texture.getImageView();
+			auto actorTexture = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getTexture();
+			if (actorTexture == nullptr)
+				imageInfo.imageView = renderer->texture.getImageView();
+			else
+				imageInfo.imageView = actorTexture->getImageView();
 			imageInfo.sampler = renderer->textureSampler;
 
-			VkDescriptorImageInfo normalMapInfo{};
+			VkDescriptorImageInfo normalMapInfo{};	
 			normalMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			normalMapInfo.imageView = renderer->normalMap.getImageView();
+			auto actorNomal = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getNormalMap();
+			if (actorNomal == nullptr)
+				normalMapInfo.imageView = renderer->normalMap.getImageView();
+			else
+				normalMapInfo.imageView = actorNomal->getImageView();
 			normalMapInfo.sampler = renderer->textureSampler;
 
 			VkDescriptorImageInfo depthMapInfo{};
@@ -259,7 +266,7 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 		}
 	}
 
-	virtual void createDescriptorSets(int numVisuals, int currentImage) override
+	virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) override
 	{
 		if (numVisuals_DescriptorSets[currentImage] == numVisuals)
 			return;
@@ -407,11 +414,11 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 	}
 
 	pipeline->createUniformBuffers(visualComponents.size(), currentImage);
-	pipeline->createDescriptorSets(visualComponents.size(), currentImage);
+	pipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
 	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 
 	offscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
-	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage);
+	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
 	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 }
 

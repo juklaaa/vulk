@@ -22,21 +22,35 @@ public:
 		renderer.init(window);
 
 		Model rabbitModel;
-		rabbitModel.load(&renderer, "models/stanford_bunny.obj");
-		Model floorModel;
-		floorModel.load(&renderer, "models/cube.obj");
+		rabbitModel.load(&renderer, "models/stanford_bunny.obj");	
+		Texture bunnyTexture;
+		bunnyTexture.load(&renderer, "textures/stanford_bunny.jpg");
+		Texture bunnyNormal;
+		bunnyNormal.load(&renderer, "textures/stanford_bunny_normal.png", VK_FORMAT_R8G8B8A8_UNORM);
 		auto bunnyActor = scene.addActor();
 		bunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
+		bunnyActor->getComponent< VisualComponent>()->setTexture(&bunnyTexture);
+		bunnyActor->getComponent< VisualComponent>()->setNormalMap(&bunnyNormal);
 		bunnyActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
+		
 
+		Model floorModel;
+		floorModel.load(&renderer, "models/cube.obj");
+		Texture floorTexture;
+		floorTexture.load(&renderer, "textures/floor.jpg");
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
+		floorActor->getComponent<VisualComponent>()->setTexture(&floorTexture);
 		floorActor->getTransformComponent().setTransform(Mtx::rotation({ 1.57f, 0.0f, 0.0f }));
 
 		mainLoop();
 
 		rabbitModel.unload();
 		floorModel.unload();
+
+		bunnyTexture.unload();
+		bunnyNormal.unload();
+		floorTexture.unload();
 
 		renderer.deinit();
 		deinitWindow();

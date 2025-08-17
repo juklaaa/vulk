@@ -42,7 +42,7 @@ public:
 		void allocateUniformBuffersMemory(int maxNumVisuals);
 		void createUniformBuffers(int numVisuals, int currentImage);
 		virtual void createDescriptorPool(int maxNumVisuals) = 0;
-		virtual void createDescriptorSets(int numVisuals, int currentImage) = 0;
+		virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) = 0;
 
 		virtual size_t getUBOSize() const = 0;
 		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) = 0;
