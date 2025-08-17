@@ -272,11 +272,11 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 
 		uint32_t numDescriptorSets = numVisuals;
 
-		std::vector<VkDescriptorSetLayout> layouts(getNumFramesInFlight(), descriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = numDescriptorSets;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(numDescriptorSets);
 		allocInfo.pSetLayouts = layouts.data();
 
 		set.resize(numDescriptorSets);
@@ -597,6 +597,7 @@ void Renderer::PipelineBase::deinit()
 {
 	for (size_t i = 0; i < getImpl().getNumFramesInFlight(); i++)
 	{
+
 		for (auto buffer : uniformBuffers[i])
 			vkDestroyBuffer(getDevice(), buffer, nullptr);
 		vkFreeMemory(getDevice(), uniformBuffersMemory[i], nullptr);
