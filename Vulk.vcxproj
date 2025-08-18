@@ -99,6 +99,7 @@
     <ClInclude Include="source\Rendering\Model.h" />
     <ClInclude Include="source\rendering\Renderer.h" />
     <ClInclude Include="source\rendering\RendererImpl.h" />
+    <ClInclude Include="source\rendering\shapes.h" />
     <ClInclude Include="source\Rendering\Texture.h" />
     <ClInclude Include="source\Rendering\VisualComponent.h" />
   </ItemGroup>
@@ -111,6 +112,7 @@
     <ClCompile Include="source\rendering\Model.cpp" />
     <ClCompile Include="source\rendering\Renderer.cpp" />
     <ClCompile Include="source\rendering\RendererImpl.cpp" />
+    <ClCompile Include="source\rendering\shapes.cpp" />
     <ClCompile Include="source\rendering\Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

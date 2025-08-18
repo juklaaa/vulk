@@ -179,3 +179,114 @@ void Model::createIndexBuffer()
 	vkDestroyBuffer(getDevice(), stagingBuffer, nullptr);
 	vkFreeMemory(getDevice(), stagingBufferMemory, nullptr);
 }
+
+
+void Model::loadPlane(Renderer* renderer_, float size)
+{
+	renderer = renderer_;
+
+	float x = size / 2.0f;
+	float y = size / 2.0f;
+
+	glm::vec3 positions[4] =
+	{
+		{ x,  y,  0}, {-x,  y,  0}, {-x, -y,  0}, { x, -y,  0}
+	};
+	glm::vec3 normal = { 0, 0, 1} ;
+
+	glm::vec2 tex[4] = { {1,1}, {1,0}, {0,0}, {0,1} };
+
+	for (int i = 0; i < 4; i++) {
+		Vertex v;
+		v.pos = positions[i];
+		v.color = { 1,1,1 };
+		v.normal = normal;
+		v.texCoord = tex[i];
+		vertices.push_back(v);
+	}
+
+	indices.push_back(0);
+	indices.push_back(1);
+	indices.push_back(2);
+
+	indices.push_back(2);
+	indices.push_back(3);
+	indices.push_back(0);
+
+	computeTangents();
+	createVertexBuffer();
+	createIndexBuffer();
+
+	isInitialized = true;
+}
+
+void Model::loadCube(Renderer* renderer_, float size)
+{
+	renderer = renderer_;
+
+	float x = size / 2.0f;
+	float y = size / 2.0f;
+	float z = size / 2.0f;
+
+	glm::vec3 positions[6][4] =
+	{
+		{ { x,  y,  z}, {-x,  y,  z}, {-x, -y,  z}, { x, -y,  z} },
+		{ { x,  y, -z}, { x, -y, -z}, {-x, -y, -z}, {-x,  y, -z} },
+		{ {-x,  y,  z}, {-x,  y, -z}, {-x, -y, -z}, {-x, -y,  z} },
+		{ { x,  y,  z}, { x, -y,  z}, { x, -y, -z}, { x,  y, -z} },
+		{ { x,  y,  z}, { x,  y, -z}, {-x,  y, -z}, {-x,  y,  z} },
+		{ { x, -y,  z}, {-x, -y,  z}, {-x, -y, -z}, { x, -y, -z} }
+	};
+
+	glm::vec3 normals[6] =
+	{
+		{ 0, 0, 1},  
+		{ 0, 0,-1},  
+		{-1, 0, 0},  
+		{ 1, 0, 0},  
+		{ 0, 1, 0},  
+		{ 0,-1, 0}   
+	};
+
+	glm::vec2 tex[4] = { {1,1}, {1,0}, {0,0}, {0,1} };
+
+	for (int f = 0; f < 6; f++) {
+		for (int i = 0; i < 4; i++) {
+			Vertex v;
+			v.pos = positions[f][i];
+			v.color = { 1,1,1 };
+			v.normal = normals[f];
+			v.texCoord = tex[i];
+			vertices.push_back(v);
+		}
+	}
+
+	for (int f = 0; f < 6; f++) {
+		int start = f * 4;
+		indices.push_back(start + 0);
+		indices.push_back(start + 1);
+		indices.push_back(start + 2);
+
+		indices.push_back(start + 2);
+		indices.push_back(start + 3);
+		indices.push_back(start + 0);
+	}
+
+	computeTangents();
+	createVertexBuffer();
+	createIndexBuffer();
+
+	isInitialized = true;
+}
+
+void Model::loadSphere(Renderer* renderer_, float size)
+{
+	renderer = renderer_;
+
+
+	computeTangents();
+	createVertexBuffer();
+	createIndexBuffer();
+
+	isInitialized = true;
+}

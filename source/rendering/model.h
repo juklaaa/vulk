@@ -80,6 +80,11 @@ public:
 	VkBuffer getIndexBuffer() const { return indexBuffer; }
 	uint32_t getNumIndices() const { return (uint32_t)indices.size(); }
 
+	void loadPlane(Renderer* renderer, float size = 1.0f);
+	void loadCube(Renderer* renderer, float size = 1.0f);
+	void loadSphere(Renderer* renderer, float size = 1.0f);
+
+
 protected:
 
 	VkDevice getDevice() const;
@@ -98,3 +103,4 @@ protected:
 	VkDeviceMemory indexBufferMemory;
 	bool isInitialized = false;
 };
+

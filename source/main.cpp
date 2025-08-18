@@ -34,23 +34,31 @@ public:
 		bunnyActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
 		
 
-		Model floorModel;
+		/*Model floorModel;
 		floorModel.load(&renderer, "models/cube.obj");
 		Texture floorTexture;
 		floorTexture.load(&renderer, "textures/floor.jpg");
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
 		floorActor->getComponent<VisualComponent>()->setTexture(&floorTexture);
-		floorActor->getTransformComponent().setTransform(Mtx::rotation({ 1.57f, 0.0f, 0.0f }));
+		floorActor->getTransformComponent().setTransform(Mtx::rotation({ 1.57f, 0.0f, 0.0f }));*/
+
+		Model planeModel;
+		planeModel.generatePlane(&renderer,2);
+
+		auto plane = scene.addActor();
+		plane->addComponent<VisualComponent>()->setModel(&planeModel);
 
 		mainLoop();
 
 		rabbitModel.unload();
-		floorModel.unload();
+		//floorModel.unload();
 
 		bunnyTexture.unload();
 		bunnyNormal.unload();
-		floorTexture.unload();
+		//floorTexture.unload();
+
+		planeModel.unload();
 
 		renderer.deinit();
 		deinitWindow();
