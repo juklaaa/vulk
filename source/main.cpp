@@ -27,38 +27,58 @@ public:
 		bunnyTexture.load(&renderer, "textures/stanford_bunny.jpg");
 		Texture bunnyNormal;
 		bunnyNormal.load(&renderer, "textures/stanford_bunny_normal.png", VK_FORMAT_R8G8B8A8_UNORM);
+		
+		//bunny		
+		Material bunnyMaterial;
+		bunnyMaterial.setTexture(&bunnyTexture);
+		bunnyMaterial.setNormalMap(&bunnyNormal);
 		auto bunnyActor = scene.addActor();
 		bunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
-		bunnyActor->getComponent< VisualComponent>()->setTexture(&bunnyTexture);
-		bunnyActor->getComponent< VisualComponent>()->setNormalMap(&bunnyNormal);
-		bunnyActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
+		bunnyActor->getComponent< VisualComponent>()->setMaterial(&bunnyMaterial);
+		bunnyActor->getTransformComponent().setTransform(Mtx::translation({ -1.5f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
 		
+		//purple bunny
+		Material purpleBunnyMaterial;
+		purpleBunnyMaterial.setTexture(&bunnyTexture);
+		purpleBunnyMaterial.setNormalMap(&bunnyNormal);
+		purpleBunnyMaterial.setLightRefletion(4);
+		purpleBunnyMaterial.setColor(0.4f, 0.0f, 1.0f);
+		auto purpleBunnyActor = scene.addActor();
+		purpleBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
+		purpleBunnyActor->getComponent< VisualComponent>()->setMaterial(&purpleBunnyMaterial);
+		purpleBunnyActor->getTransformComponent().setTransform(Mtx::translation({ 1.5f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));		
 
-		/*Model floorModel;
-		floorModel.load(&renderer, "models/cube.obj");
-		Texture floorTexture;
-		floorTexture.load(&renderer, "textures/floor.jpg");
+
+		//white bunny
+		Material whiteBunnyMaterial;
+		whiteBunnyMaterial.setNormalMap(&bunnyNormal);
+		whiteBunnyMaterial.setLightRefletion(256);
+		whiteBunnyMaterial.setColor(1.0f, 1.0f, 1.0f);
+		auto whiteBunnyActor = scene.addActor();
+		whiteBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
+		whiteBunnyActor->getComponent< VisualComponent>()->setMaterial(&whiteBunnyMaterial);
+		whiteBunnyActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, -3.0f, -3.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
+
+
+		//floor
+		Material floorMaterial;
+		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
+		Model floorModel;
+		floorModel.generatePlane(&renderer,8);
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
-		floorActor->getComponent<VisualComponent>()->setTexture(&floorTexture);
-		floorActor->getTransformComponent().setTransform(Mtx::rotation({ 1.57f, 0.0f, 0.0f }));*/
+		floorActor->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
+		floorActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, 0.0f, -0.95f }));
 
-		Model planeModel;
-		planeModel.generatePlane(&renderer,2);
-
-		auto plane = scene.addActor();
-		plane->addComponent<VisualComponent>()->setModel(&planeModel);
 
 		mainLoop();
 
 		rabbitModel.unload();
-		//floorModel.unload();
+		floorModel.unload();
 
 		bunnyTexture.unload();
 		bunnyNormal.unload();
-		//floorTexture.unload();
 
-		planeModel.unload();
 
 		renderer.deinit();
 		deinitWindow();

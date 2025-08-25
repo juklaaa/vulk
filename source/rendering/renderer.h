@@ -4,6 +4,7 @@
 #include "RendererImpl.h"
 #include "Model.h"
 #include "Texture.h"
+#include "VisualComponent.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -14,6 +15,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
 
 class Scene;
 
@@ -45,7 +47,7 @@ public:
 		virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) = 0;
 
 		virtual size_t getUBOSize() const = 0;
-		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) = 0;
+		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, const std::vector<VisualComponent*>& visualComponents, int numVisuals) = 0;
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }

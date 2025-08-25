@@ -23,7 +23,10 @@ struct UBO
 	glm::mat4 view;
 	glm::mat4 proj;
 	glm::mat4 depthMVP;
-	glm::vec3 light;
+	glm::vec4 light;
+	glm::vec3 modelColor;
+	float modelLightReflection;
+	float textured;
 };
 
 struct SceneDataForUniforms
@@ -46,17 +49,36 @@ struct Pipeline : public Renderer::PipelineBase
 
 struct MainPipeline : public Pipeline<UBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, const std::vector<VisualComponent*>& visualComponents, int numVisuals) override
 	{
 		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
+		//const Material* materialsData = reinterpret_cast<const Material*>(materials);
 		for (int i = 0; i < numVisuals; i++)
 		{
 			UBO ubo{};
 			ubo.model = sceneData[i].model;
 			ubo.view = sceneData[i].view;
 			ubo.proj = sceneData[i].proj;
-			ubo.light = sceneData[i].light;
 			ubo.depthMVP = sceneData[i].offscreenMVP;
+			ubo.light = glm::vec4((sceneData[i].light), 0);
+
+			auto material = visualComponents[i]->getMaterial();
+		
+			if (material != nullptr)
+			{
+				ubo.modelColor = *material->getColor();
+				ubo.modelLightReflection = *material->getLightReflection();
+				ubo.textured = *material->isTextured();
+
+			}
+			else
+			{
+				ubo.modelColor = glm::vec3(1.0f, 1.0f, 1.0f);
+				ubo.modelLightReflection = 0;
+				ubo.textured = 1;
+			}
+			
+
 			memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, &ubo, sizeof(ubo));
 		}
 	}
@@ -153,22 +175,34 @@ struct MainPipeline : public Pipeline<UBO>
 			bufferInfo.offset = 0;
 			bufferInfo.range = getUBOSize();
 
+			auto actorMaterial = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getMaterial();
+
 			VkDescriptorImageInfo imageInfo{};	
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			auto actorTexture = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getTexture();
-			if (actorTexture == nullptr)
+			if (actorMaterial == nullptr)
 				imageInfo.imageView = renderer->texture.getImageView();
 			else
-				imageInfo.imageView = actorTexture->getImageView();
+			{
+				auto actorTexture = actorMaterial->getTexture();
+				if(actorTexture==nullptr)
+					imageInfo.imageView = renderer->texture.getImageView();
+				else
+					imageInfo.imageView = actorTexture->getImageView();
+			}				
 			imageInfo.sampler = renderer->textureSampler;
 
 			VkDescriptorImageInfo normalMapInfo{};	
 			normalMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			auto actorNomal = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getNormalMap();
-			if (actorNomal == nullptr)
+			if (actorMaterial == nullptr)
 				normalMapInfo.imageView = renderer->normalMap.getImageView();
 			else
-				normalMapInfo.imageView = actorNomal->getImageView();
+			{
+				auto actorNomal = actorMaterial->getNormalMap();
+				if (actorNomal == nullptr)
+					normalMapInfo.imageView = renderer->normalMap.getImageView();
+				else
+					normalMapInfo.imageView = actorNomal->getImageView();
+			}
 			normalMapInfo.sampler = renderer->textureSampler;
 
 			VkDescriptorImageInfo depthMapInfo{};
@@ -217,7 +251,7 @@ struct MainPipeline : public Pipeline<UBO>
 
 struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, const std::vector<VisualComponent*>& visualComponents, int numVisuals) override
 	{
 		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
 		for (int i = 0; i < numVisuals; i++)
@@ -381,6 +415,8 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 
 	std::vector<SceneDataForUniforms> sceneDatas;
 	sceneDatas.reserve(visualComponents.size());
+
+	std::vector<const Material*> sceneMaterials;
 	for (auto visual : visualComponents)
 	{
 		auto worldTransform = visual->getActor()->getTransformComponent().getWorldTransform();
@@ -411,15 +447,18 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		sceneDataForUniforms.light = light;
 		sceneDataForUniforms.offscreenMVP = offscreenMVP;
 		sceneDatas.push_back(sceneDataForUniforms);
+
+		auto  material = visual->getActor()->getComponent<VisualComponent>()->getMaterial();
+		sceneMaterials.push_back(material);
 	}
 
 	pipeline->createUniformBuffers(visualComponents.size(), currentImage);
 	pipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
-	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
+	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents, visualComponents.size());
 
 	offscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
 	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
-	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
+	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents, visualComponents.size());
 }
 
 void Renderer::waitUntilDone()

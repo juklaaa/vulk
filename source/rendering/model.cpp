@@ -181,7 +181,7 @@ void Model::createIndexBuffer()
 }
 
 
-void Model::loadPlane(Renderer* renderer_, float size)
+void Model::generatePlane(Renderer* renderer_, float size)
 {
 	renderer = renderer_;
 
@@ -220,7 +220,7 @@ void Model::loadPlane(Renderer* renderer_, float size)
 	isInitialized = true;
 }
 
-void Model::loadCube(Renderer* renderer_, float size)
+void Model::generateCube(Renderer* renderer_, float size)
 {
 	renderer = renderer_;
 
@@ -279,7 +279,7 @@ void Model::loadCube(Renderer* renderer_, float size)
 	isInitialized = true;
 }
 
-void Model::loadSphere(Renderer* renderer_, float size)
+/*void Model::generateSphere(Renderer* renderer_, float size)
 {
 	renderer = renderer_;
 
@@ -289,4 +289,4 @@ void Model::loadSphere(Renderer* renderer_, float size)
 	createIndexBuffer();
 
 	isInitialized = true;
-}
+}*/

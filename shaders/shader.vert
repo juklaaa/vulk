@@ -3,16 +3,19 @@
 layout(binding = 0) uniform UniformBufferObject 
 {
     mat4 model;
-    mat4 view;
-    mat4 proj;
-    mat4 depthMVP;
-    vec3 light;
+	mat4 view;
+	mat4 proj;
+	mat4 depthMVP;
+	vec4 light;
+	vec3 modelColor;
+	float modelLightReflection;
+	float textured;
 } ubo;
 
-layout(push_constant) uniform constants
+/*layout(push_constant) uniform constants
 {
     uint isPPLightingEnabled;
-} pushConstants;
+} pushConstants;*/
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
@@ -26,6 +29,8 @@ layout(location = 2) out mat3 fragTBN;
 layout(location = 5) out vec3 fragViewDir;
 layout(location = 6) out vec3 fragLight;
 layout(location = 7) out vec4 fragLightCamPosition;
+layout(location = 8) out float fragTextured;
+layout(location = 9) out float fragLightReflection;
 
 const mat4 biasMat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
@@ -36,9 +41,13 @@ const mat4 biasMat = mat4(
 
 void main() 
 {
-    fragLight = ubo.light;
+    fragLight = ubo.light.xyz;
     fragTexCoord = inTexCoord;
-    fragColor = inColor;
+
+    fragColor = ubo.modelColor;
+
+    fragTextured= ubo.textured;
+    fragLightReflection = ubo.modelLightReflection;
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
     fragLightCamPosition = biasMat * ubo.depthMVP * vec4(inPosition, 1.0f);

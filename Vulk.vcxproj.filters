@@ -59,9 +59,6 @@
     <ClInclude Include="source\Rendering\VisualComponent.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="source\rendering\shapes.h">
-      <Filter>Source Files\Rendering</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -90,9 +87,6 @@
     </ClCompile>
     <ClCompile Include="source\Engine\TransformComponent.cpp">
       <Filter>Source Files\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="source\rendering\shapes.cpp">
-      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
