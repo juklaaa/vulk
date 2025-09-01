@@ -6,9 +6,18 @@ layout(location = 2) in mat3 fragTBN;
 layout(location = 5) in vec3 fragViewDir;
 layout(location = 6) in vec3 fragLight;
 layout(location = 7) in vec4 fragLightCamPosition;
-layout(location = 8) in float fragTextured;
-layout(location = 9) in float fragLightReflection;
 
+layout(binding = 0) uniform UniformBufferObject 
+{
+    mat4 model;
+	mat4 view;
+	mat4 proj;
+	mat4 depthMVP;
+	vec4 light;
+	vec3 modelColor;
+	float modelLightReflection;
+	float textured;
+} ubo;
 
 layout(binding = 1) uniform sampler2D texSampler;
 layout(binding = 2) uniform sampler2D normalSmpler;
@@ -24,9 +33,8 @@ layout(location = 0) out vec4 outColor;
 vec3 directionToLight = normalize(fragLight);
 vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
 
-
-float lightReflection = fragLightReflection;
-float textured = fragTextured;
+float lightReflection = ubo.modelLightReflection;
+float textured = ubo.textured;
 
 void main() 
 {
@@ -40,8 +48,7 @@ void main()
 
     float lightIntensity = max(lit * dot(normalWorld, directionToLight), 0.1);
 
-
-    if(textured > 0)
+    if (textured > 0)
     {
         outColor = vec4(fragColor,1.0f)*(texture(texSampler, fragTexCoord) * lightIntensity);
     }
@@ -50,23 +57,12 @@ void main()
         outColor = vec4(fragColor,1.0f) * lightIntensity;
     }
 
-    if(lightReflection > 0)
+    if (lightReflection > 0)
     {
         vec3 reflectDir = reflect(-directionToLight, normalWorld);  
         float spec = lit * pow(max(dot(fragViewDir, reflectDir), 0.0), lightReflection);
         vec3 specular = spec * lightColor;
 
         outColor += vec4(specular, 1.0f);   
-
     }
-
-    /*if (pushConstants.isPPLightingEnabled == 1)
-    {
-         
-     }
-    else
-    {  
-        
-   
-    }*/
 }

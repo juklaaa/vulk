@@ -7,6 +7,8 @@
 #include "Common.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/VisualComponent.h"
+#include "Physics/PhysicsSystem.h"
+#include "Physics/PhysicsComponent.h"
 #include "Engine/Scene.h"
 
 const uint32_t WIDTH = 800;
@@ -35,29 +37,30 @@ public:
 		auto bunnyActor = scene.addActor();
 		bunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
 		bunnyActor->getComponent< VisualComponent>()->setMaterial(&bunnyMaterial);
-		bunnyActor->getTransformComponent().setTransform(Mtx::translation({ -1.5f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
+		bunnyActor->getTransformComponent().setTransform(Mtx::translate({ -1.5f, -3.0f, 0.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
 		
 		//purple bunny
 		Material purpleBunnyMaterial;
 		purpleBunnyMaterial.setTexture(&bunnyTexture);
 		purpleBunnyMaterial.setNormalMap(&bunnyNormal);
-		purpleBunnyMaterial.setLightRefletion(4);
+		purpleBunnyMaterial.setLightReflection(4);
 		purpleBunnyMaterial.setColor(0.4f, 0.0f, 1.0f);
 		auto purpleBunnyActor = scene.addActor();
 		purpleBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
 		purpleBunnyActor->getComponent< VisualComponent>()->setMaterial(&purpleBunnyMaterial);
-		purpleBunnyActor->getTransformComponent().setTransform(Mtx::translation({ 1.5f, -3.0f, 0.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));		
+		purpleBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 1.5f, -3.0f, 0.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));		
+		purpleBunnyActor->addComponent<PhysicsComponent>();
 
 
 		//white bunny
 		Material whiteBunnyMaterial;
 		whiteBunnyMaterial.setNormalMap(&bunnyNormal);
-		whiteBunnyMaterial.setLightRefletion(256);
+		whiteBunnyMaterial.setLightReflection(256);
 		whiteBunnyMaterial.setColor(1.0f, 1.0f, 1.0f);
 		auto whiteBunnyActor = scene.addActor();
 		whiteBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
 		whiteBunnyActor->getComponent< VisualComponent>()->setMaterial(&whiteBunnyMaterial);
-		whiteBunnyActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, -3.0f, -3.0f }) * Mtx::rotation({ -1.57f, 0.0f, 0.0f }));
+		whiteBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, -3.0f, -3.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
 
 
 		//floor
@@ -68,7 +71,7 @@ public:
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
 		floorActor->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
-		floorActor->getTransformComponent().setTransform(Mtx::translation({ 0.0f, 0.0f, -0.95f }));
+		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -0.95f }));
 
 
 		mainLoop();
@@ -133,7 +136,8 @@ private:
 
 			glfwPollEvents();
 
-			scene.getTransformComponent().setTransform(Mtx::translation({ 0.0f, 2.0f, 0.0f }));
+			scene.getTransformComponent().setTransform(Mtx::translate({ 0.0f, 2.0f, 0.0f }));
+			physics.update(scene, frameTime);
 			scene.tick(frameTime);
 			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
 		}
@@ -144,6 +148,7 @@ private:
 
 	GLFWwindow* window = nullptr;
 	Renderer renderer;
+	PhysicsSystem physics;
 
 	Scene scene;
 

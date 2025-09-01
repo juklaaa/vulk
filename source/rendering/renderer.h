@@ -47,7 +47,7 @@ public:
 		virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) = 0;
 
 		virtual size_t getUBOSize() const = 0;
-		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, const std::vector<VisualComponent*>& visualComponents, int numVisuals) = 0;
+		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) = 0;
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }

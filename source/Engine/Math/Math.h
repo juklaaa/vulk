@@ -6,13 +6,10 @@ struct V4
 {
 	V4() = default;
 	V4(float x_, float y_, float z_)
-		:x(x_), y(y_), z(z_), w(0)
-	{
-	}
+		:x(x_), y(y_), z(z_), w(0) {}
 	V4(float x_, float y_, float z_, float w_)
-		:x(x_), y(y_), z(z_), w(w_)
-	{
-	}
+		:x(x_), y(y_), z(z_), w(w_) {}
+	static V4 zero() { return V4{ 0.0f, 0.0f, 0.0f, 0.0f }; }
 
 	float& operator[] (int index)
 	{
@@ -37,6 +34,11 @@ struct V4
 		return x * v.x + y * v.y + z * v.z + w * v.w;
 	}
 
+	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
+	V4 operator / (float v) const { return { x / v, y / v, z / v, w / v }; }
+	V4 operator + (V4 v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
+	V4 operator += (V4 v) { x += v.x; y += v.y; z += v.z; w += v.w; return *this; }
+
 	float x;
 	float y;
 	float z;
@@ -58,7 +60,7 @@ struct Mtx
 		return m;
 	}
 
-	static Mtx rotation(V4 euler)
+	static Mtx rotate(V4 euler)
 	{
 		Mtx m;
 		memset(&m, 0, sizeof(m));
@@ -72,7 +74,7 @@ struct Mtx
 		return m;
 	}
 
-	static Mtx translation(V4 vec)
+	static Mtx translate(V4 vec)
 	{
 		Mtx m;
 		memset(&m, 0, sizeof(m));

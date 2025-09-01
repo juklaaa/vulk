@@ -36,6 +36,7 @@ struct SceneDataForUniforms
 	glm::mat4 proj;
 	glm::mat4 offscreenMVP;
 	glm::vec3 light;
+	const Material* material = nullptr;
 };
 
 template<typename UBO_Type>
@@ -49,10 +50,9 @@ struct Pipeline : public Renderer::PipelineBase
 
 struct MainPipeline : public Pipeline<UBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, const std::vector<VisualComponent*>& visualComponents, int numVisuals) override
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
 	{
 		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		//const Material* materialsData = reinterpret_cast<const Material*>(materials);
 		for (int i = 0; i < numVisuals; i++)
 		{
 			UBO ubo{};
@@ -62,14 +62,11 @@ struct MainPipeline : public Pipeline<UBO>
 			ubo.depthMVP = sceneData[i].offscreenMVP;
 			ubo.light = glm::vec4((sceneData[i].light), 0);
 
-			auto material = visualComponents[i]->getMaterial();
-		
-			if (material != nullptr)
+			if (auto material = sceneData[i].material)
 			{
-				ubo.modelColor = *material->getColor();
-				ubo.modelLightReflection = *material->getLightReflection();
-				ubo.textured = *material->isTextured();
-
+				ubo.modelColor = material->getColor();
+				ubo.modelLightReflection = material->getLightReflection();
+				ubo.textured = material->isTextured();
 			}
 			else
 			{
@@ -77,7 +74,6 @@ struct MainPipeline : public Pipeline<UBO>
 				ubo.modelLightReflection = 0;
 				ubo.textured = 1;
 			}
-			
 
 			memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, &ubo, sizeof(ubo));
 		}
@@ -90,7 +86,7 @@ struct MainPipeline : public Pipeline<UBO>
 		uboLayoutBinding.descriptorCount = 1;
 		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		uboLayoutBinding.pImmutableSamplers = nullptr;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 		samplerLayoutBinding.binding = 1;
@@ -251,7 +247,7 @@ struct MainPipeline : public Pipeline<UBO>
 
 struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, const std::vector<VisualComponent*>& visualComponents, int numVisuals) override
+	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
 	{
 		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
 		for (int i = 0; i < numVisuals; i++)
@@ -416,7 +412,6 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 	std::vector<SceneDataForUniforms> sceneDatas;
 	sceneDatas.reserve(visualComponents.size());
 
-	std::vector<const Material*> sceneMaterials;
 	for (auto visual : visualComponents)
 	{
 		auto worldTransform = visual->getActor()->getTransformComponent().getWorldTransform();
@@ -446,19 +441,17 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		sceneDataForUniforms.proj = proj;
 		sceneDataForUniforms.light = light;
 		sceneDataForUniforms.offscreenMVP = offscreenMVP;
+		sceneDataForUniforms.material = visual->getMaterial();
 		sceneDatas.push_back(sceneDataForUniforms);
-
-		auto  material = visual->getActor()->getComponent<VisualComponent>()->getMaterial();
-		sceneMaterials.push_back(material);
 	}
 
 	pipeline->createUniformBuffers(visualComponents.size(), currentImage);
 	pipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
-	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents, visualComponents.size());
+	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 
 	offscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
 	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
-	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents, visualComponents.size());
+	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 }
 
 void Renderer::waitUntilDone()

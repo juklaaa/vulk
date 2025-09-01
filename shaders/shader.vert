@@ -29,8 +29,6 @@ layout(location = 2) out mat3 fragTBN;
 layout(location = 5) out vec3 fragViewDir;
 layout(location = 6) out vec3 fragLight;
 layout(location = 7) out vec4 fragLightCamPosition;
-layout(location = 8) out float fragTextured;
-layout(location = 9) out float fragLightReflection;
 
 const mat4 biasMat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
@@ -45,9 +43,6 @@ void main()
     fragTexCoord = inTexCoord;
 
     fragColor = ubo.modelColor;
-
-    fragTextured= ubo.textured;
-    fragLightReflection = ubo.modelLightReflection;
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
     fragLightCamPosition = biasMat * ubo.depthMVP * vec4(inPosition, 1.0f);
