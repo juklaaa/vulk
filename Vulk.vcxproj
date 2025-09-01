@@ -96,6 +96,8 @@
     <ClInclude Include="source\Engine\Math\Math.h" />
     <ClInclude Include="source\Engine\Scene.h" />
     <ClInclude Include="source\Engine\TransformComponent.h" />
+    <ClInclude Include="source\Physics\PhysicsComponent.h" />
+    <ClInclude Include="source\Physics\PhysicsSystem.h" />
     <ClInclude Include="source\Rendering\Model.h" />
     <ClInclude Include="source\rendering\Renderer.h" />
     <ClInclude Include="source\rendering\RendererImpl.h" />
@@ -108,6 +110,8 @@
     <ClCompile Include="source\Engine\Scene.cpp" />
     <ClCompile Include="source\Engine\TransformComponent.cpp" />
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\Physics\PhysicsComponent.cpp" />
+    <ClCompile Include="source\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="source\rendering\Model.cpp" />
     <ClCompile Include="source\rendering\Renderer.cpp" />
     <ClCompile Include="source\rendering\RendererImpl.cpp" />

@@ -14,6 +14,9 @@
     <Filter Include="Source Files\Engine\Math">
       <UniqueIdentifier>{f7fe8367-379f-41ac-bf54-9ac341efa684}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Physics">
+      <UniqueIdentifier>{03045b16-5a66-416e-aab1-6c2639d59229}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader.frag" />
@@ -59,6 +62,12 @@
     <ClInclude Include="source\Rendering\VisualComponent.h">
       <Filter>Source Files\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="source\Physics\PhysicsComponent.h">
+      <Filter>Source Files\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Physics\PhysicsSystem.h">
+      <Filter>Source Files\Physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -87,6 +96,12 @@
     </ClCompile>
     <ClCompile Include="source\Engine\TransformComponent.cpp">
       <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Physics\PhysicsComponent.cpp">
+      <Filter>Source Files\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Physics\PhysicsSystem.cpp">
+      <Filter>Source Files\Physics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
