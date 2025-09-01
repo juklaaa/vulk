@@ -8,7 +8,6 @@ class TransformComponent : public Component
 public:
 
 	const Mtx& getTransform() const;
-	Mtx& getTransform();
 	void setTransform(const Mtx& transform);
 	const Mtx& getWorldTransform() const;
 

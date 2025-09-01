@@ -41,7 +41,7 @@ public:
 		Material purpleBunnyMaterial;
 		purpleBunnyMaterial.setTexture(&bunnyTexture);
 		purpleBunnyMaterial.setNormalMap(&bunnyNormal);
-		purpleBunnyMaterial.setLightRefletion(4);
+		purpleBunnyMaterial.setLightReflection(4);
 		purpleBunnyMaterial.setColor(0.4f, 0.0f, 1.0f);
 		auto purpleBunnyActor = scene.addActor();
 		purpleBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
@@ -52,7 +52,7 @@ public:
 		//white bunny
 		Material whiteBunnyMaterial;
 		whiteBunnyMaterial.setNormalMap(&bunnyNormal);
-		whiteBunnyMaterial.setLightRefletion(256);
+		whiteBunnyMaterial.setLightReflection(256);
 		whiteBunnyMaterial.setColor(1.0f, 1.0f, 1.0f);
 		auto whiteBunnyActor = scene.addActor();
 		whiteBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
