@@ -279,9 +279,48 @@ void Model::generateCube(Renderer* renderer_, float size)
 	isInitialized = true;
 }
 
-/*void Model::generateSphere(Renderer* renderer_, float size)
+void Model::generateSphere(Renderer* renderer_, float radius, int segments, int rings)
 {
 	renderer = renderer_;
+
+	for (int i = 0; i <= rings; i++)
+	{
+		float theta = glm::pi<float>() * i / rings;
+
+		for (int j = 0; j <= segments; j++)
+		{
+			float phi = glm::two_pi<float>() * j / segments;
+
+			Vertex v;
+			v.pos.x = radius * sin(theta) * cos(phi);
+			v.pos.y = radius * sin(theta) * sin(phi);
+			v.pos.z = radius * cos(theta);
+
+			v.color = glm::vec3(1.0f, 1.0f, 1.0f);
+			v.normal = glm::normalize(v.pos);
+			v.texCoord=glm::vec2(float(i)/rings,float(j)/segments);
+
+			vertices.push_back(v);
+
+		}
+	}
+
+	for (int i = 0; i < rings; i++)
+	{
+		for (int j = 0; j < segments; j++)
+		{
+			int first = i * (segments + 1) + j;
+			int second = first + segments + 1;
+
+			indices.push_back(first);
+			indices.push_back(second);
+			indices.push_back(first + 1);
+
+			indices.push_back(second);
+			indices.push_back(second + 1);
+			indices.push_back(first + 1);
+		}
+	}
 
 
 	computeTangents();
@@ -289,4 +328,4 @@ void Model::generateCube(Renderer* renderer_, float size)
 	createIndexBuffer();
 
 	isInitialized = true;
-}*/
+}

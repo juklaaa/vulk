@@ -423,7 +423,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 
 		proj[1][1] *= -1;
 
-		glm::vec3 light = glm::vec3(-5.0f, 5.0f, 5.0f);
+		glm::vec3 light = glm::vec3(-5.0f, -3.0f, 5.0f);
 
 		float orthoSize = 4.0f;
 		float nearPlane = 0.1f;

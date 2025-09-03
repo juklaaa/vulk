@@ -48,9 +48,7 @@ public:
 		auto purpleBunnyActor = scene.addActor();
 		purpleBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
 		purpleBunnyActor->getComponent< VisualComponent>()->setMaterial(&purpleBunnyMaterial);
-		purpleBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 1.5f, -3.0f, 0.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));		
-		purpleBunnyActor->addComponent<PhysicsComponent>();
-
+		purpleBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 1.5f, -3.0f, 0.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
 
 		//white bunny
 		Material whiteBunnyMaterial;
@@ -62,7 +60,6 @@ public:
 		whiteBunnyActor->getComponent< VisualComponent>()->setMaterial(&whiteBunnyMaterial);
 		whiteBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, -3.0f, -3.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
 
-
 		//floor
 		Material floorMaterial;
 		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
@@ -73,14 +70,27 @@ public:
 		floorActor->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
 		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -0.95f }));
 
+		//sphere
+		Material sphereMaterial;
+		sphereMaterial.setColor(1.0f, 0.0f, 1.0f);
+		Model sphererModel;
+		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
+		auto sphereActor = scene.addActor();
+		sphereActor->addComponent<VisualComponent>()->setModel(&sphererModel);
+		sphereActor->getComponent< VisualComponent>()->setMaterial(&sphereMaterial);
+		sphereActor->getTransformComponent().setTransform(Mtx::translate({0.0f, 0.0f, 0.0f }));
+		sphereActor->addComponent< PhysicsComponent>();
+
 
 		mainLoop();
 
 		rabbitModel.unload();
 		floorModel.unload();
+		sphererModel.unload();
 
 		bunnyTexture.unload();
 		bunnyNormal.unload();
+		
 
 
 		renderer.deinit();

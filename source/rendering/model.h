@@ -82,7 +82,7 @@ public:
 
 	void generatePlane(Renderer* renderer, float size = 1.0f);
 	void generateCube(Renderer* renderer, float size = 1.0f);
-	/*void generateSphere(Renderer* renderer, float size = 1.0f);*/
+	void generateSphere(Renderer* renderer, float radius = 1.0f, int segments = 16, int ring = 16);
 
 
 protected:
