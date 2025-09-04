@@ -9,6 +9,7 @@
 #include "Rendering/VisualComponent.h"
 #include "Physics/PhysicsSystem.h"
 #include "Physics/PhysicsComponent.h"
+#include "Physics/ColliderComponent.h"
 #include "Engine/Scene.h"
 
 const uint32_t WIDTH = 800;
@@ -77,10 +78,18 @@ public:
 		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
 		auto sphereActor = scene.addActor();
 		sphereActor->addComponent<VisualComponent>()->setModel(&sphererModel);
-		sphereActor->getComponent< VisualComponent>()->setMaterial(&sphereMaterial);
-		sphereActor->getTransformComponent().setTransform(Mtx::translate({0.0f, 0.0f, 0.0f }));
-		sphereActor->addComponent< PhysicsComponent>();
+		sphereActor->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
+		sphereActor->getTransformComponent().setTransform(Mtx::translate({0.0f, 0.0f, 2.0f }));
+		sphereActor->addComponent<PhysicsComponent>();
+		sphereActor->addComponent<SphereColliderComponent>();
 
+		//second sphere
+		auto sphereActor2 = scene.addActor();
+		sphereActor2->addComponent<VisualComponent>()->setModel(&sphererModel);
+		sphereActor2->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
+		sphereActor2->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -2.0f }));
+		sphereActor2->addComponent<PhysicsComponent>();
+		sphereActor2->addComponent<SphereColliderComponent>();
 
 		mainLoop();
 

@@ -10,7 +10,7 @@ public:
 	float getMass() const { return mass; }
 	const V4& getVelocity() const { return velocity; }
 	void setVelocity(const V4& v) { velocity = v; }
-
+	
 protected:
 
 	float mass = 1.0f;
