@@ -68,6 +68,9 @@
     <ClInclude Include="source\Physics\PhysicsSystem.h">
       <Filter>Source Files\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="source\Physics\ColliderComponent.h">
+      <Filter>Source Files\Physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -101,6 +104,9 @@
       <Filter>Source Files\Physics</Filter>
     </ClCompile>
     <ClCompile Include="source\Physics\PhysicsSystem.cpp">
+      <Filter>Source Files\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Physics\ColliderComponent.cpp">
       <Filter>Source Files\Physics</Filter>
     </ClCompile>
   </ItemGroup>

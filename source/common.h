@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cassert>
 #include <cstdint> 
 #include <cstdlib>
 #include <cstring>
@@ -16,3 +17,4 @@
 #include <vector> 
 
 using uint = unsigned int;
+using uchar = unsigned char;

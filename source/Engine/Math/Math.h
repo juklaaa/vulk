@@ -29,15 +29,22 @@ struct V4
 		throw std::runtime_error("Wrong index");
 	}
 
-	float dot(V4 v) const
+	float dot(const V4& v) const
 	{
 		return x * v.x + y * v.y + z * v.z + w * v.w;
 	}
 
+	float length2() const { return x * x + y * y + z * z + w * w; }
+	float length() const { return sqrtf(length2()); }
+	float dist2(const V4& v) { return (*this - v).length2(); }
+	float dist(const V4& v) { return (*this - v).length(); }
+
 	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
 	V4 operator / (float v) const { return { x / v, y / v, z / v, w / v }; }
-	V4 operator + (V4 v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
-	V4 operator += (V4 v) { x += v.x; y += v.y; z += v.z; w += v.w; return *this; }
+	V4 operator + (const V4& v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
+	V4 operator - (const V4& v) const { return { x - v.x, y - v.y, z - v.z, w - v.w }; }
+	V4 operator += (const V4& v) { x += v.x; y += v.y; z += v.z; w += v.w; return *this; }
+	bool operator == (const V4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
 
 	float x;
 	float y;
@@ -99,6 +106,20 @@ struct Mtx
 				m.rows[i][j] = rows[i].dot(mtx.getColumn(j));
 
 		return m;
+	}
+
+	V4 operator * (const V4& v) const
+	{
+		V4 res;
+		for (int i = 0; i < 4; ++i)
+			res[i] = rows[i].dot(v);
+
+		return res;
+	}
+
+	V4 getPosition() const
+	{
+		return rows[3];
 	}
 
 	V4 rows[4];

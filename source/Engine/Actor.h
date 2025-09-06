@@ -37,6 +37,17 @@ public:
 		return nullptr;
 	}
 
+	template<typename ComponentType>
+	std::vector<ComponentType*> getComponents() const
+	{
+		std::vector<ComponentType*> wantedComponents;
+		for (Component* component : components)
+			if (auto asWanted = dynamic_cast<ComponentType*>(component))
+				wantedComponents.push_back(asWanted);
+
+		return wantedComponents;
+	}
+
 	virtual void tick(float dt);
 
 protected:
