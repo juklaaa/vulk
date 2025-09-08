@@ -7,6 +7,7 @@ struct PhysicsEntity
 {
 	PhysicsComponent* physics = nullptr;
 	std::vector<ColliderComponent*> colliders;
+	Mtx originalTransform;
 };
 
 void PhysicsSystem::update(Scene& scene, float dt)
@@ -19,7 +20,8 @@ void PhysicsSystem::update(Scene& scene, float dt)
 			entities.emplace_back
 			(
 				component,
-				actor->getComponents<ColliderComponent>()
+				actor->getComponents<ColliderComponent>(),
+				actor->getTransformComponent().getTransform()
 			);
 		}
 	});
@@ -29,7 +31,7 @@ void PhysicsSystem::update(Scene& scene, float dt)
 		auto physics = entity.physics;
 		TransformComponent& transformComponent = physics->getActor()->getTransformComponent();
 		V4 velocity = physics->getVelocity();
-		V4 acceleration = transformComponent.getTransform().getPosition() * -0.0000025f / physics->getMass();
+		V4 acceleration = transformComponent.getWorldTransform().getPosition() * -0.0000025f * 0.0f / physics->getMass();
 		velocity += acceleration * dt;
 		physics->setVelocity(velocity);
 		transformComponent.setTransform(transformComponent.getTransform() * Mtx::translate(velocity * dt));
@@ -40,14 +42,23 @@ void PhysicsSystem::update(Scene& scene, float dt)
 		{
 			auto& entity1 = entities[i];
 			auto& entity2 = entities[j];
-			for (auto collider1 : entity1.colliders)
-				for (auto collider2 : entity2.colliders)
-				{
-					if (collider1->intersects(*collider2))
-					{
-						std::cout << "Collision!" << std::endl;
-						// TODO: react on the collision
-					}
-				}
+			auto&& collided = [](PhysicsEntity& a, PhysicsEntity& b)
+			{
+				for (auto collider1 : a.colliders)
+					for (auto collider2 : b.colliders)
+						if (collider1->intersects(*collider2))
+							return true;
+
+				return false;
+			};
+
+			if (collided(entity1, entity2))
+			{
+				entity1.physics->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
+				entity2.physics->getActor()->getTransformComponent().setTransform(entity2.originalTransform);
+
+				entity1.physics->setVelocity(entity1.physics->getVelocity() * -1.0f);
+				entity2.physics->setVelocity(entity2.physics->getVelocity() * -1.0f);
+			}
 		}
 }

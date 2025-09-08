@@ -66,16 +66,31 @@ class SphereBoxCollisionMediator : public CollisionMediator
 	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 };
 
+class SpherePlaneCollisionMediator : public CollisionMediator
+{
+	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+};
+
 class BoxBoxCollisionMediator : public CollisionMediator
 {
 	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+};
+
+class PlanePlaneCollisionMediator : public CollisionMediator
+{
+	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override
+	{
+		return false;
+	}
 };
 
 GeneralCollisionMediator::GeneralCollisionMediator()
 {
 	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Sphere}] = new SphereSphereCollisionMediator;
 	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Box}] = new SphereSphereCollisionMediator;
+	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Plane}] = new SpherePlaneCollisionMediator;
 	mediators[{ColliderComponent::Type::Box, ColliderComponent::Type::Box}] = new BoxBoxCollisionMediator;
+	mediators[{ColliderComponent::Type::Plane, ColliderComponent::Type::Plane}] = new PlanePlaneCollisionMediator;
 }
 
 GeneralCollisionMediator::~GeneralCollisionMediator()
@@ -110,8 +125,8 @@ bool SphereSphereCollisionMediator::intersects(const ColliderComponent& collider
 {
 	Mtx cwt1 = collider1.getWorldTransform();
 	Mtx cwt2 = collider2.getWorldTransform();
-	float r1 = (cwt1 * V4{ 1.0f, 0.0f, 0.0f, 0.0f }).length();
-	float r2 = (cwt1 * V4{ 1.0f, 0.0f, 0.0f, 0.0f }).length();
+	float r1 = 0.5f * (cwt1.getColumn(0)).length();
+	float r2 = 0.5f * (cwt1.getColumn(0)).length();
 	if (cwt1.getPosition().dist(cwt2.getPosition()) < r1 + r2)
 		return true;
 
@@ -121,6 +136,16 @@ bool SphereSphereCollisionMediator::intersects(const ColliderComponent& collider
 bool SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	// TODO
+	return false;
+}
+
+bool SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+{
+	Mtx cwt1 = collider1.getWorldTransform();
+	float r1 = 0.5f * (cwt1.getColumn(0)).length();
+
+	V4 planeEq = static_cast<const PlaneColliderComponent&>(collider2).getEquation();
+	// TODO:
 	return false;
 }
 

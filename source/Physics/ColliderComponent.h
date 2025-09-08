@@ -14,6 +14,7 @@ public:
 	{
 		Sphere,
 		Box,
+		Plane,
 
 		_Size
 	};
@@ -39,4 +40,15 @@ class BoxColliderComponent : public ColliderComponent
 {
 public:
 	virtual Type getType() const override { return Type::Box; }
+};
+
+class PlaneColliderComponent : public ColliderComponent
+{
+public:
+	virtual Type getType() const override { return Type::Plane; }
+
+	V4 getEquation() const { return equation; }
+
+protected:
+	V4 equation;
 };
