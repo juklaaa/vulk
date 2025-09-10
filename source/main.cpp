@@ -83,14 +83,16 @@ public:
 		sphereActor->addComponent<PhysicsComponent>();
 		sphereActor->addComponent<SphereColliderComponent>();
 
-		//second sphere
-		auto sphereActor2 = scene.addActor();
-		sphereActor2->addComponent<VisualComponent>()->setModel(&sphererModel);
-		sphereActor2->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
-		sphereActor2->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -2.0f }));
-		sphereActor2->addComponent<PhysicsComponent>();
-		sphereActor2->addComponent<SphereColliderComponent>();
-
+		for (int i = 0; i < 5; i++)
+		{
+			auto sphereActor2 = scene.addActor();
+			sphereActor2->addComponent<VisualComponent>()->setModel(&sphererModel);
+			sphereActor2->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
+			sphereActor2->getTransformComponent().setTransform(Mtx::translate({ i - 2.5f, 0.0f, 0.0f }));
+			sphereActor2->addComponent<PhysicsComponent>()->setVelocity(V4{2.5f - i, 0.0f, 1.0f } * 0.1f);
+			sphereActor2->addComponent<SphereColliderComponent>();
+		}
+		
 		mainLoop();
 
 		rabbitModel.unload();
