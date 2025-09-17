@@ -117,6 +117,12 @@ struct Mtx
 		return res;
 	}
 
+	const V4& operator[] (int index) const
+	{
+		return rows[index];
+		throw std::runtime_error("Wrong index");
+	}
+
 	V4 getPosition() const
 	{
 		return rows[3];
