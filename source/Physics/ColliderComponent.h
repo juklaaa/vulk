@@ -15,13 +15,12 @@ public:
 		Sphere,
 		Box,
 		Plane,
-
 		_Size
 	};
 
 	virtual Type getType() const = 0;
 
-	bool intersects(ColliderComponent& other) const;
+	V4 intersects(ColliderComponent& other) const;
 	void setTransform(const Mtx& transform);
 	const Mtx& getTransform() const;
 	Mtx getWorldTransform() const;
@@ -49,6 +48,8 @@ public:
 
 	V4 getEquation() const { return equation; }
 
+	void setEquation(V4 e) { equation = e; }
+
 protected:
-	V4 equation;
+	V4 equation = { 0.0f, 1.0f,1.0f,0.0f };	// TODO
 };

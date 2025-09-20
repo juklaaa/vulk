@@ -24,58 +24,34 @@ public:
 		initWindow();
 		renderer.init(window);
 
-		Model rabbitModel;
-		rabbitModel.load(&renderer, "models/stanford_bunny.obj");	
-		Texture bunnyTexture;
-		bunnyTexture.load(&renderer, "textures/stanford_bunny.jpg");
-		Texture bunnyNormal;
-		bunnyNormal.load(&renderer, "textures/stanford_bunny_normal.png", VK_FORMAT_R8G8B8A8_UNORM);
-		
-		//bunny		
-		Material bunnyMaterial;
-		bunnyMaterial.setTexture(&bunnyTexture);
-		bunnyMaterial.setNormalMap(&bunnyNormal);
-		auto bunnyActor = scene.addActor();
-		bunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
-		bunnyActor->getComponent< VisualComponent>()->setMaterial(&bunnyMaterial);
-		bunnyActor->getTransformComponent().setTransform(Mtx::translate({ -1.5f, -3.0f, 0.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
-		
-		//purple bunny
-		Material purpleBunnyMaterial;
-		purpleBunnyMaterial.setTexture(&bunnyTexture);
-		purpleBunnyMaterial.setNormalMap(&bunnyNormal);
-		purpleBunnyMaterial.setLightReflection(4);
-		purpleBunnyMaterial.setColor(0.4f, 0.0f, 1.0f);
-		auto purpleBunnyActor = scene.addActor();
-		purpleBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
-		purpleBunnyActor->getComponent< VisualComponent>()->setMaterial(&purpleBunnyMaterial);
-		purpleBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 1.5f, -3.0f, 0.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
-
-		//white bunny
-		Material whiteBunnyMaterial;
-		whiteBunnyMaterial.setNormalMap(&bunnyNormal);
-		whiteBunnyMaterial.setLightReflection(256);
-		whiteBunnyMaterial.setColor(1.0f, 1.0f, 1.0f);
-		auto whiteBunnyActor = scene.addActor();
-		whiteBunnyActor->addComponent<VisualComponent>()->setModel(&rabbitModel);
-		whiteBunnyActor->getComponent< VisualComponent>()->setMaterial(&whiteBunnyMaterial);
-		whiteBunnyActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, -3.0f, -3.0f }) * Mtx::rotate({ -1.57f, 0.0f, 0.0f }));
-
 		//floor
 		Material floorMaterial;
 		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
 		Model floorModel;
 		floorModel.generatePlane(&renderer,8);
 		auto floorActor = scene.addActor();
-		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
-		floorActor->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
-		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -0.95f }));
+		//floor coliders
+		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, 0.0f }));
+		floorActor->addComponent<PhysicsComponent>()->setMass(9999.0f);
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,4.0f });//left wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,-4.0f });//right wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,4.0f });//back wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,-4.0f });//front wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,5.0f });//ceiling
 
-		//sphere
+		//floor but only model 
+		auto floorActor2 = scene.addActor();
+		floorActor2->addComponent<VisualComponent>()->setModel(&floorModel);
+		floorActor2->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
+		floorActor2->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
+
+		//spheres
 		Material sphereMaterial;
 		sphereMaterial.setColor(1.0f, 0.0f, 1.0f);
 		Model sphererModel;
 		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
+
 		auto sphereActor = scene.addActor();
 		sphereActor->addComponent<VisualComponent>()->setModel(&sphererModel);
 		sphereActor->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
@@ -83,24 +59,19 @@ public:
 		sphereActor->addComponent<PhysicsComponent>();
 		sphereActor->addComponent<SphereColliderComponent>();
 
-		for (int i = 0; i < 5; i++)
-		{
-			auto sphereActor2 = scene.addActor();
-			sphereActor2->addComponent<VisualComponent>()->setModel(&sphererModel);
-			sphereActor2->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
-			sphereActor2->getTransformComponent().setTransform(Mtx::translate({ i - 2.5f, 0.0f, 0.0f }));
-			sphereActor2->addComponent<PhysicsComponent>()->setVelocity(V4{2.5f - i, 0.0f, 1.0f } * 0.1f);
-			sphereActor2->addComponent<SphereColliderComponent>();
-		}
+		auto sphereActor2 = scene.addActor();
+		sphereActor2->addComponent<VisualComponent>()->setModel(&sphererModel);
+		sphereActor2->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
+		sphereActor2->getTransformComponent().setTransform(Mtx::translate({-3.0f, 0.0f, 1.0f }));
+		sphereActor2->addComponent<PhysicsComponent>() ->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
+		sphereActor2->addComponent<SphereColliderComponent>();
+		sphereActor2->getComponent<PhysicsComponent>()->setRestitution(0.99f);
 		
 		mainLoop();
 
-		rabbitModel.unload();
 		floorModel.unload();
 		sphererModel.unload();
 
-		bunnyTexture.unload();
-		bunnyNormal.unload();
 		
 
 

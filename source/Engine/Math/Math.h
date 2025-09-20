@@ -39,12 +39,21 @@ struct V4
 	float dist2(const V4& v) { return (*this - v).length2(); }
 	float dist(const V4& v) { return (*this - v).length(); }
 
+	V4 normalize() 
+	{
+		float l = length(); 
+		if(l!=0)
+			return{ x / l,y / l,z / l,w / l }; 
+		return { 0.0f,0.0f,0.0f,0.0f };
+	}
+
 	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
 	V4 operator / (float v) const { return { x / v, y / v, z / v, w / v }; }
 	V4 operator + (const V4& v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
 	V4 operator - (const V4& v) const { return { x - v.x, y - v.y, z - v.z, w - v.w }; }
 	V4 operator += (const V4& v) { x += v.x; y += v.y; z += v.z; w += v.w; return *this; }
 	bool operator == (const V4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
+
 
 	float x;
 	float y;
@@ -120,7 +129,6 @@ struct Mtx
 	const V4& operator[] (int index) const
 	{
 		return rows[index];
-		throw std::runtime_error("Wrong index");
 	}
 
 	V4 getPosition() const

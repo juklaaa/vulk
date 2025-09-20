@@ -18,7 +18,7 @@ class CollisionMediator
 public:
 
 	virtual ~CollisionMediator() = default;
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const = 0;
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const = 0;
 };
 
 class GeneralCollisionMediator : public CollisionMediator
@@ -27,7 +27,7 @@ public:
 
 	GeneralCollisionMediator();
 	~GeneralCollisionMediator();
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 
 	static GeneralCollisionMediator& getSingleton();
 
@@ -36,7 +36,7 @@ private:
 	std::unordered_map<std::pair<ColliderComponent::Type, ColliderComponent::Type>, CollisionMediator*> mediators;
 };
 
-bool ColliderComponent::intersects(ColliderComponent& other) const
+V4 ColliderComponent::intersects(ColliderComponent& other) const
 {
 	return GeneralCollisionMediator::getSingleton().intersects(*this, other);
 }
@@ -58,29 +58,29 @@ Mtx ColliderComponent::getWorldTransform() const
 
 class SphereSphereCollisionMediator : public CollisionMediator
 {
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 };
 
 class SphereBoxCollisionMediator : public CollisionMediator
 {
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 };
 
 class SpherePlaneCollisionMediator : public CollisionMediator
 {
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 };
 
 class BoxBoxCollisionMediator : public CollisionMediator
 {
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 };
 
 class PlanePlaneCollisionMediator : public CollisionMediator
 {
-	virtual bool intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override
+	virtual V4 intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override
 	{
-		return false;
+		return  V4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 };
 
@@ -105,7 +105,7 @@ GeneralCollisionMediator& GeneralCollisionMediator::getSingleton()
 	return instance;
 }
 
-bool GeneralCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+V4 GeneralCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	// sort pair
 	const ColliderComponent* colliderA = &collider1;
@@ -121,36 +121,54 @@ bool GeneralCollisionMediator::intersects(const ColliderComponent& collider1, co
 	return mediator->intersects(*colliderA, *colliderB);
 }
 
-bool SphereSphereCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+V4 SphereSphereCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	Mtx cwt1 = collider1.getWorldTransform();
 	Mtx cwt2 = collider2.getWorldTransform();
-	float r1 = 0.5f * (cwt1.getColumn(0)).length();
-	float r2 = 0.5f * (cwt1.getColumn(0)).length();
+	//TODO radius
+	float r1 = 0.5f * cwt1[0][0];
+	float r2 = 0.5f * cwt2[0][0];
+	//std::cout << r1 + r2 << " " << cwt1.getPosition().dist(cwt2.getPosition()) << "\n";
 	if (cwt1.getPosition().dist(cwt2.getPosition()) < r1 + r2)
-		return true;
+	{
+		std::cout << r1 + r2 << " " << cwt1.getPosition().dist(cwt2.getPosition()) << " sphere-sphere collision \n";
+		V4 normal =cwt1.getPosition() - cwt2.getPosition();
+		normal = normal.normalize();
+		return normal;
+	}
 
-	return false;
+	return V4(0.0f,0.0f,0.0f,0.0f);
 }
 
-bool SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+V4 SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	// TODO
-	return false;
+	return  V4(0.0f, 0.0f, 0.0f, 0.0f);;
 }
 
-bool SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+V4 SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	Mtx cwt1 = collider1.getWorldTransform();
-	float r1 = 0.5f * (cwt1.getColumn(0)).length();
+	//TODO radius
+	float r1 = 0.5f * cwt1[0][0];
 
 	V4 planeEq = static_cast<const PlaneColliderComponent&>(collider2).getEquation();
-	// TODO:
-	return false;
+	float A = planeEq.x, B = planeEq.y, C = planeEq.z, D = planeEq.w;
+	float x0 = cwt1[3][0], y0 = cwt1[3][1], z0= cwt1[3][2];
+	float d = fabs(A*x0 + B*y0 + C*z0 + D)/ sqrt(A*A + B*B + C*C);
+	
+	if (d < r1)
+	{
+		//std::cout <<r1<<" "<<d<< " sphere-plane Collision \n";
+		V4 normal = V4{ A,B,C,0.0f }.normalize();
+		return normal;
+	}
+		
+	return  V4(0.0f, 0.0f, 0.0f, 0.0f);;
 }
 
-bool BoxBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+V4 BoxBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	// TODO
-	return false;
+	return  V4(0.0f, 0.0f, 0.0f, 0.0f);;
 }
