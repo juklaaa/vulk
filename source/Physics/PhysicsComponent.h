@@ -14,10 +14,14 @@ public:
 	void setMass(float m) { mass = m; }
 	float getRestitution() const { return restitution; }
 	void setRestitution(float e) { restitution = e; }	
+
+	void setDynamic(bool b) { dynamic = b; }
+	bool isDynamic() const { return dynamic; }
 	
 protected:
 
 	float mass = 1.0f;
 	float restitution = 1.0f;
 	V4 velocity = V4::zero();
+	bool dynamic = true;
 };

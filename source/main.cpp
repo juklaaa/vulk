@@ -30,50 +30,48 @@ public:
 		Model floorModel;
 		floorModel.generatePlane(&renderer,8);
 		auto floorActor = scene.addActor();
-		//floor coliders
 		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, 0.0f }));
-		floorActor->addComponent<PhysicsComponent>()->setMass(9999.0f);
+		floorActor->addComponent<PhysicsComponent>() ->setMass(9999.0f);//TODO infinite mass
+		floorActor->getComponent<PhysicsComponent>()->setDynamic(false);
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,4.0f });//left wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,-4.0f });//right wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,4.0f });//back wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,-4.0f });//front wall
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,5.0f });//ceiling
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,4.0f });//ceiling
+		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
+		floorActor->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
+		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
 
-		//floor but only model 
-		auto floorActor2 = scene.addActor();
-		floorActor2->addComponent<VisualComponent>()->setModel(&floorModel);
-		floorActor2->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
-		floorActor2->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
-
-		//spheres
-		Material sphereMaterial;
-		sphereMaterial.setColor(1.0f, 0.0f, 1.0f);
+		//spheres		
 		Model sphererModel;
 		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
 
-		auto sphereActor = scene.addActor();
-		sphereActor->addComponent<VisualComponent>()->setModel(&sphererModel);
-		sphereActor->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
-		sphereActor->getTransformComponent().setTransform(Mtx::translate({0.0f, 0.0f, 2.0f }));
-		sphereActor->addComponent<PhysicsComponent>();
-		sphereActor->addComponent<SphereColliderComponent>();
+		std::vector<Actor*> spheres;
+		Material spheresMatirials[7];
+		for (float i = 0; i < 7; i++)
+		{
+			Material material;
+			float c = (i+1) / 7;
+			material.setColor(c, 0.0f, c);
+			int j = i;
+			spheresMatirials[j] = material;
 
-		auto sphereActor2 = scene.addActor();
-		sphereActor2->addComponent<VisualComponent>()->setModel(&sphererModel);
-		sphereActor2->getComponent<VisualComponent>()->setMaterial(&sphereMaterial);
-		sphereActor2->getTransformComponent().setTransform(Mtx::translate({-3.0f, 0.0f, 1.0f }));
-		sphereActor2->addComponent<PhysicsComponent>() ->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
-		sphereActor2->addComponent<SphereColliderComponent>();
-		sphereActor2->getComponent<PhysicsComponent>()->setRestitution(0.99f);
-		
+			auto actor = scene.addActor();
+			actor->addComponent<VisualComponent>()->setModel(&sphererModel);
+			actor->getComponent<VisualComponent>()->setMaterial(&spheresMatirials[j]);
+			actor->getTransformComponent().setTransform(Mtx::translate({ i - 3, 0.0f, 1.0f }));
+			actor->addComponent<PhysicsComponent>() ->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
+			actor->addComponent<SphereColliderComponent>();
+			actor->getComponent<PhysicsComponent>()->setMass(i + 3);
+			actor->getComponent<PhysicsComponent>()->setRestitution(0.99f);
+			spheres.push_back(actor);
+		}
+
 		mainLoop();
 
 		floorModel.unload();
 		sphererModel.unload();
-
-		
-
 
 		renderer.deinit();
 		deinitWindow();

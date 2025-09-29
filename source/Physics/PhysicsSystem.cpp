@@ -29,12 +29,17 @@ void PhysicsSystem::update(Scene& scene, float dt)
 	for (auto& entity : entities)
 	{
 		auto physics = entity.physics;
-		TransformComponent& transformComponent = physics->getActor()->getTransformComponent();
-		V4 velocity = physics->getVelocity();
-		V4 acceleration = V4{ 0.0f, 0.0f,-0.0000025f } / physics->getMass();
-		velocity += acceleration * dt;
-		physics->setVelocity(velocity);
-		transformComponent.setTransform(transformComponent.getTransform() * Mtx::translate(velocity * dt));
+		if (physics->isDynamic())
+		{
+			TransformComponent& transformComponent = physics->getActor()->getTransformComponent();
+			V4 velocity = physics->getVelocity();
+			V4 acceleration = V4{ 0.0f, 0.0f,-0.0000025f };
+			velocity += acceleration * dt;
+			physics->setVelocity(velocity);
+			transformComponent.setTransform(transformComponent.getTransform() * Mtx::translate(velocity * dt));
+		}
+		
+		
 	}
 
 	for (int i = 0; i < entities.size(); ++i)
@@ -57,17 +62,17 @@ void PhysicsSystem::update(Scene& scene, float dt)
 				return V4(0.0f, 0.0f, 0.0f, 0.0f);
 			};
 
-			V4 n = collided(entity1, entity2);//TODO colision normal
+			V4 n = collided(entity1, entity2);
 
 			if (n != V4(0.0f, 0.0f, 0.0f, 0.0f))
 			{
-				entity1.physics->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
-				entity2.physics->getActor()->getTransformComponent().setTransform(entity2.originalTransform);			
-				
-				n = n.normalize();
-
 				auto physics1 = entity1.physics;
 				auto physics2 = entity2.physics;
+
+				physics1->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
+				physics2->getActor()->getTransformComponent().setTransform(entity2.originalTransform);
+				
+				n = n.normalize();				
 
 				float e = (physics1->getRestitution() + physics2->getRestitution())/2;
 
@@ -77,11 +82,16 @@ void PhysicsSystem::update(Scene& scene, float dt)
 				V4 v1 = entity1.physics->getVelocity();
 				V4 v2 = entity2.physics->getVelocity();
 
-				V4 newV1 = v1 -   n * ((v1 - v2).dot(n)) * (((1 + e) * m2) / (m1 + m2));
-				V4 newV2 = v2 + n * ((v1 - v2).dot(n)) * (((1 + e) * m1) / (m1 + m2));
+				float j =(v1-v2).dot(n) *(e + 1) * (m1 * m2) / (m1 + m2);
 
-				entity1.physics->setVelocity(newV1);
-				entity2.physics->setVelocity(newV2);
+				V4 newV1 = v1 - n * (j / m1);
+				V4 newV2 = v2 + n * (j / m2);
+				
+				if(physics1->isDynamic())
+					physics1->setVelocity(newV1);
+
+				if(physics2->isDynamic())
+					physics2->setVelocity(newV2);
 			}
 		}
 }

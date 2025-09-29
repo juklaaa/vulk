@@ -125,13 +125,12 @@ V4 SphereSphereCollisionMediator::intersects(const ColliderComponent& collider1,
 {
 	Mtx cwt1 = collider1.getWorldTransform();
 	Mtx cwt2 = collider2.getWorldTransform();
-	//TODO radius
-	float r1 = 0.5f * cwt1[0][0];
-	float r2 = 0.5f * cwt2[0][0];
-	//std::cout << r1 + r2 << " " << cwt1.getPosition().dist(cwt2.getPosition()) << "\n";
+
+	float r1 = 0.5f *V4(cwt1[0][0], cwt1[1][0], cwt1[2][0], 0.0f).length();
+	float r2 = 0.5f * V4(cwt2[0][0], cwt2[1][0], cwt2[2][0], 0.0f).length();
+
 	if (cwt1.getPosition().dist(cwt2.getPosition()) < r1 + r2)
 	{
-		std::cout << r1 + r2 << " " << cwt1.getPosition().dist(cwt2.getPosition()) << " sphere-sphere collision \n";
 		V4 normal =cwt1.getPosition() - cwt2.getPosition();
 		normal = normal.normalize();
 		return normal;
@@ -148,18 +147,17 @@ V4 SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, co
 
 V4 SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
-	Mtx cwt1 = collider1.getWorldTransform();
-	//TODO radius
-	float r1 = 0.5f * cwt1[0][0];
+	Mtx cwt = collider1.getWorldTransform();
+
+	float r = 0.5f * V4(cwt[0][0], cwt[1][0], cwt[2][0], 0.0f).length();
 
 	V4 planeEq = static_cast<const PlaneColliderComponent&>(collider2).getEquation();
 	float A = planeEq.x, B = planeEq.y, C = planeEq.z, D = planeEq.w;
-	float x0 = cwt1[3][0], y0 = cwt1[3][1], z0= cwt1[3][2];
+	float x0 = cwt[3][0], y0 = cwt[3][1], z0= cwt[3][2];
 	float d = fabs(A*x0 + B*y0 + C*z0 + D)/ sqrt(A*A + B*B + C*C);
 	
-	if (d < r1)
+	if (d < r)
 	{
-		//std::cout <<r1<<" "<<d<< " sphere-plane Collision \n";
 		V4 normal = V4{ A,B,C,0.0f }.normalize();
 		return normal;
 	}
