@@ -38,8 +38,6 @@ void PhysicsSystem::update(Scene& scene, float dt)
 			physics->setVelocity(velocity);
 			transformComponent.setTransform(transformComponent.getTransform() * Mtx::translate(velocity * dt));
 		}
-		
-		
 	}
 
 	for (int i = 0; i < entities.size(); ++i)
@@ -47,24 +45,21 @@ void PhysicsSystem::update(Scene& scene, float dt)
 		{
 			auto& entity1 = entities[i];
 			auto& entity2 = entities[j];
-			auto&& collided = [](PhysicsEntity& a, PhysicsEntity& b)
+			auto&& collided = [](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
 			{
 				for (auto collider1 : a.colliders)
 					for (auto collider2 : b.colliders)
 					{
-						V4 normal = collider1->intersects(*collider2);
-						if (normal != V4(0.0f, 0.0f, 0.0f, 0.0f))
+						if (auto normal = collider1->intersects(*collider2))
 						{
 							return normal;
 						}
 					}													
 
-				return V4(0.0f, 0.0f, 0.0f, 0.0f);
+				return {};
 			};
 
-			V4 n = collided(entity1, entity2);
-
-			if (n != V4(0.0f, 0.0f, 0.0f, 0.0f))
+			if (auto nOpt = collided(entity1, entity2))
 			{
 				auto physics1 = entity1.physics;
 				auto physics2 = entity2.physics;
@@ -72,9 +67,7 @@ void PhysicsSystem::update(Scene& scene, float dt)
 				physics1->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
 				physics2->getActor()->getTransformComponent().setTransform(entity2.originalTransform);
 				
-				n = n.normalize();				
-
-				float e = (physics1->getRestitution() + physics2->getRestitution())/2;
+				float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
 
 				float m1 = physics1->getMass();
 				float m2 = physics2->getMass();
@@ -82,15 +75,16 @@ void PhysicsSystem::update(Scene& scene, float dt)
 				V4 v1 = entity1.physics->getVelocity();
 				V4 v2 = entity2.physics->getVelocity();
 
-				float j =(v1-v2).dot(n) *(e + 1) * (m1 * m2) / (m1 + m2);
+				V4 n = nOpt.value();
+				float j = (v1 - v2).dot(n) * (e + 1) * (m1 * m2) / (m1 + m2);
 
 				V4 newV1 = v1 - n * (j / m1);
 				V4 newV2 = v2 + n * (j / m2);
 				
-				if(physics1->isDynamic())
+				if (physics1->isDynamic())
 					physics1->setVelocity(newV1);
 
-				if(physics2->isDynamic())
+				if (physics2->isDynamic())
 					physics2->setVelocity(newV2);
 			}
 		}
