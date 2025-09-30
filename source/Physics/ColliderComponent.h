@@ -20,7 +20,7 @@ public:
 
 	virtual Type getType() const = 0;
 
-	V4 intersects(ColliderComponent& other) const;
+	std::optional<V4> intersects(ColliderComponent& other) const;
 	void setTransform(const Mtx& transform);
 	const Mtx& getTransform() const;
 	Mtx getWorldTransform() const;
