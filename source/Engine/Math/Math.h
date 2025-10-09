@@ -48,12 +48,12 @@ struct V4
 	}
 
 	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
+	friend V4 operator * (float v, const V4& vec) { return vec * v; }
 	V4 operator / (float v) const { return { x / v, y / v, z / v, w / v }; }
 	V4 operator + (const V4& v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
 	V4 operator - (const V4& v) const { return { x - v.x, y - v.y, z - v.z, w - v.w }; }
 	V4 operator += (const V4& v) { x += v.x; y += v.y; z += v.z; w += v.w; return *this; }
 	bool operator == (const V4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
-
 
 	float x;
 	float y;
@@ -134,6 +134,13 @@ struct Mtx
 	V4 getPosition() const
 	{
 		return rows[3];
+	}
+
+	Mtx inversedTransform() const
+	{
+		// TODO: Inverse Rotation*Scale with Kramer's method
+		// Combine into inversed Transform
+		return *this;
 	}
 
 	V4 rows[4];
