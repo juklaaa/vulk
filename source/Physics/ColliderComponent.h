@@ -51,5 +51,5 @@ public:
 	void setEquation(V4 e) { equation = e; }
 
 protected:
-	V4 equation = { 0.0f, 1.0f,1.0f,0.0f };	
+	V4 equation = { 0.0f, 1.0f, 1.0f, 0.0f };	
 };
