@@ -141,7 +141,14 @@ std::optional<V4> SphereSphereCollisionMediator::intersects(const ColliderCompon
 
 std::optional<V4> SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
-	// TODO
+	Mtx sphereT = collider1.getWorldTransform();
+	float r = 0.5f * V4(sphereT[0][0], sphereT[1][0], sphereT[2][0], 0.0f).length();
+	V4 sphereC = sphereT.getPosition();
+	const BoxColliderComponent& box = static_cast<const BoxColliderComponent&>(collider2);
+	Mtx invBoxT = box.getWorldTransform().inversedTransform();
+
+	// TODO: move sphere into invBoxT and calculate the collision
+
 	return {};
 }
 
