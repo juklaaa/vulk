@@ -21,6 +21,7 @@ public:
 
 	void run()
 	{
+		testInverseAlgorithm();
 		initWindow();
 		renderer.init(window);
 
@@ -30,7 +31,6 @@ public:
 		Model floorModel;
 		floorModel.generatePlane(&renderer,8);
 		auto floorActor = scene.addActor();
-		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, 0.0f }));
 		floorActor->addComponent<PhysicsComponent>() ->setMass(9999.0f);//TODO infinite mass
 		floorActor->getComponent<PhysicsComponent>()->setDynamic(false);
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
@@ -40,8 +40,21 @@ public:
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,-4.0f });//front wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,4.0f });//ceiling
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
-		floorActor->getComponent< VisualComponent>()->setMaterial(&floorMaterial);
+		floorActor->getComponent<VisualComponent>()->setMaterial(&floorMaterial);
 		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
+
+		//table
+		Material tableMaterial;
+		tableMaterial.setColor(0.5f, 0.7f, 0.2f);
+		Model tableModel;
+		tableModel.generateCube(&renderer, 1);
+		auto tableActor = scene.addActor();
+		tableActor->addComponent<PhysicsComponent>()->setMass(9999.0f);
+		tableActor->getComponent<PhysicsComponent>()->setDynamic(false);
+		tableActor->addComponent<BoxColliderComponent>();
+		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
+		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
+		tableActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.0f }) * Mtx::scale({ 2.0f, 1.0f, 0.25f }));
 
 		//spheres		
 		Model sphererModel;
@@ -72,6 +85,7 @@ public:
 
 		floorModel.unload();
 		sphererModel.unload();
+		tableModel.unload();
 
 		renderer.deinit();
 		deinitWindow();
