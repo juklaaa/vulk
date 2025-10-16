@@ -65,6 +65,14 @@ struct Mtx
 {
 	Mtx() = default;
 
+	Mtx(V4 r0, V4 r1, V4 r2, V4 r3)
+	{
+		rows[0] = r0;
+		rows[1] = r1;
+		rows[2] = r2;
+		rows[3] = r3;
+	}
+
 	static Mtx indentity()
 	{
 		Mtx m;
@@ -107,6 +115,11 @@ struct Mtx
 		return V4(rows[0][i], rows[1][i], rows[2][i], rows[3][i]);
 	}
 
+	V4 getRow(int i) const
+	{
+		return rows[i];
+	}
+
 	Mtx operator * (const Mtx& mtx) const
 	{
 		Mtx m;
@@ -138,9 +151,48 @@ struct Mtx
 
 	Mtx inversedTransform() const
 	{
-		// TODO: Inverse Rotation*Scale with Kramer's method
-		// Combine into inversed Transform
-		return *this;
+		V4 row0 = getRow(0), row1 = getRow(1), row2 = getRow(2), tranform = getRow(3);
+
+		float a = row0[0], b = row0[1], c = row0[2],
+			d = row1[0], e = row1[1], f = row1[2],
+			g = row2[0], h = row2[1], i = row2[2];
+
+		float W = a * (e * i - f * h) + b * (f * g - d * i) + c * (d * h - e * g);
+
+		float w[3][3];
+		w[0][0] = e * i - f * g;
+		w[0][1] = f * g - d * i;
+		w[0][2] = d * h - e * g;
+
+		w[1][0] = c * h - b * i;
+		w[1][1] = a * i - c * g;
+		w[1][2] = b * g - a * h;
+		
+		w[2][0] = b * f - c * e;
+		w[2][1] = c * d - a * f;
+		w[2][2] = a * e - b * d;
+
+		V4 rs[3];
+		rs[0][3] = 0;
+		rs[1][3] = 0;
+		rs[2][3] = 0;
+
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				rs[i][j] = w[j][i] / W;
+			}
+		}
+
+		V4 newTransform;
+		newTransform[0] = -(rs[0][0] * tranform[0] + rs[0][1] * tranform[1] + rs[0][2] * tranform[2]);
+		newTransform[1] = -(rs[1][0] * tranform[0] + rs[1][1] * tranform[1] + rs[1][2] * tranform[2]);
+		newTransform[2] = -(rs[2][0] * tranform[0] + rs[2][1] * tranform[1] + rs[2][2] * tranform[2]);
+		newTransform[3] = 1;
+		
+		Mtx inv = {rs[0],rs[1],rs[2], newTransform};
+		return inv;
 	}
 
 	V4 rows[4];
