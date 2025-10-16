@@ -76,20 +76,23 @@ class BoxBoxCollisionMediator : public CollisionMediator
 	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
 };
 
+class BoxPlaneCollisionMediator : public CollisionMediator
+{
+	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override;
+};
+
 class PlanePlaneCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override
-	{
-		return {};
-	}
+	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const override { return {}; }
 };
 
 GeneralCollisionMediator::GeneralCollisionMediator()
 {
 	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Sphere}] = new SphereSphereCollisionMediator;
-	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Box}] = new SphereSphereCollisionMediator;
+	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Box}] = new SphereBoxCollisionMediator;
 	mediators[{ColliderComponent::Type::Sphere, ColliderComponent::Type::Plane}] = new SpherePlaneCollisionMediator;
 	mediators[{ColliderComponent::Type::Box, ColliderComponent::Type::Box}] = new BoxBoxCollisionMediator;
+	mediators[{ColliderComponent::Type::Box, ColliderComponent::Type::Plane}] = new BoxPlaneCollisionMediator;
 	mediators[{ColliderComponent::Type::Plane, ColliderComponent::Type::Plane}] = new PlanePlaneCollisionMediator;
 }
 
@@ -142,12 +145,19 @@ std::optional<V4> SphereSphereCollisionMediator::intersects(const ColliderCompon
 std::optional<V4> SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	Mtx sphereT = collider1.getWorldTransform();
+	V4 sphereC_World = sphereT.getPosition();
 	float r = 0.5f * V4(sphereT[0][0], sphereT[1][0], sphereT[2][0], 0.0f).length();
-	V4 sphereC = sphereT.getPosition();
 	const BoxColliderComponent& box = static_cast<const BoxColliderComponent&>(collider2);
-	Mtx invBoxT = box.getWorldTransform().inversedTransform();
-
-	// TODO: move sphere into invBoxT and calculate the collision
+	Mtx boxT = box.getWorldTransform();
+	Mtx invBoxT = boxT.inversedTransform();
+	Mtx sphereT_Box = invBoxT * sphereT;
+	V4 sphereC_Box = sphereT_Box.getPosition();
+	V4 projBoxSphereC_Box{ std::clamp(sphereC_Box.x, -0.5f, 0.5f), std::clamp(sphereC_Box.y, -0.5f, 0.5f), std::clamp(sphereC_Box.z, -0.5f, 0.5f), 1.0f };
+	V4 projSphereC_World = projBoxSphereC_Box * boxT;
+	if (projSphereC_World.dist(sphereC_World) < r)
+	{
+		return V4{ 0.0f, 0.0f, 1.0f, 0.0f };
+	}
 
 	return {};
 }
@@ -173,6 +183,12 @@ std::optional<V4> SpherePlaneCollisionMediator::intersects(const ColliderCompone
 }
 
 std::optional<V4> BoxBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
+{
+	// TODO
+	return {};
+}
+
+std::optional<V4> BoxPlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2) const
 {
 	// TODO
 	return {};

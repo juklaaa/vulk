@@ -40,52 +40,58 @@ void PhysicsSystem::update(Scene& scene, float dt)
 		}
 	}
 
-	for (int i = 0; i < entities.size(); ++i)
-		for (int j = i + 1; j < entities.size(); ++j)
-		{
-			auto& entity1 = entities[i];
-			auto& entity2 = entities[j];
-			auto&& collided = [](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
+	bool smthCollided = true;
+	while (smthCollided)
+	{
+		smthCollided = false;
+		for (int i = 0; i < entities.size(); ++i)
+			for (int j = i + 1; j < entities.size(); ++j)
 			{
-				for (auto collider1 : a.colliders)
-					for (auto collider2 : b.colliders)
+				auto& entity1 = entities[i];
+				auto& entity2 = entities[j];
+				auto&& collided = [](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
 					{
-						if (auto normal = collider1->intersects(*collider2))
-						{
-							return normal;
-						}
-					}													
+						for (auto collider1 : a.colliders)
+							for (auto collider2 : b.colliders)
+							{
+								if (auto normal = collider1->intersects(*collider2))
+								{
+									return normal;
+								}
+							}
 
-				return {};
-			};
+						return {};
+					};
 
-			if (auto nOpt = collided(entity1, entity2))
-			{
-				auto physics1 = entity1.physics;
-				auto physics2 = entity2.physics;
+				if (auto nOpt = collided(entity1, entity2))
+				{
+					smthCollided = true;
+					auto physics1 = entity1.physics;
+					auto physics2 = entity2.physics;
 
-				physics1->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
-				physics2->getActor()->getTransformComponent().setTransform(entity2.originalTransform);
-				
-				float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
+					physics1->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
+					physics2->getActor()->getTransformComponent().setTransform(entity2.originalTransform);
 
-				float m1 = physics1->getMass();
-				float m2 = physics2->getMass();
-				
-				V4 v1 = entity1.physics->getVelocity();
-				V4 v2 = entity2.physics->getVelocity();
+					float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
 
-				V4 n = nOpt.value();
-				float j = (v1 - v2).dot(n) * (e + 1) * (m1 * m2) / (m1 + m2);
+					float m1 = physics1->getMass();
+					float m2 = physics2->getMass();
 
-				V4 newV1 = v1 - n * (j / m1);
-				V4 newV2 = v2 + n * (j / m2);
-				
-				if (physics1->isDynamic())
-					physics1->setVelocity(newV1);
+					V4 v1 = entity1.physics->getVelocity();
+					V4 v2 = entity2.physics->getVelocity();
 
-				if (physics2->isDynamic())
-					physics2->setVelocity(newV2);
+					V4 n = nOpt.value();
+					float j = (v1 - v2).dot(n) * (e + 1) * (m1 * m2) / (m1 + m2);
+
+					V4 newV1 = v1 - n * (j / m1);
+					V4 newV2 = v2 + n * (j / m2);
+
+					if (physics1->isDynamic())
+						physics1->setVelocity(newV1);
+
+					if (physics2->isDynamic())
+						physics2->setVelocity(newV2);
+				}
 			}
-		}
+	}
 }
