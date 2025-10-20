@@ -45,7 +45,7 @@ public:
 
 		//table
 		Material tableMaterial;
-		tableMaterial.setColor(0.5f, 0.7f, 0.2f);
+		tableMaterial.setColor(0.9f, 0.9f, 0.2f);
 		Model tableModel;
 		tableModel.generateCube(&renderer, 1);
 		auto tableActor = scene.addActor();
