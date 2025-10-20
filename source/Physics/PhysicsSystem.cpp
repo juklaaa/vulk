@@ -41,8 +41,10 @@ void PhysicsSystem::update(Scene& scene, float dt)
 	}
 
 	bool smthCollided = true;
-	while (smthCollided)
+	int t = 0;
+	while (smthCollided )
 	{
+		t++;
 		smthCollided = false;
 		for (int i = 0; i < entities.size(); ++i)
 			for (int j = i + 1; j < entities.size(); ++j)
@@ -65,9 +67,24 @@ void PhysicsSystem::update(Scene& scene, float dt)
 
 				if (auto nOpt = collided(entity1, entity2))
 				{
-					smthCollided = true;
 					auto physics1 = entity1.physics;
 					auto physics2 = entity2.physics;
+
+					V4 n = nOpt.value();
+
+					V4 v1 = entity1.physics->getVelocity();
+					V4 v2 = entity2.physics->getVelocity();
+
+					V4 pos1 = physics1->getActor()->getTransformComponent().getWorldTransform().getPosition();
+					V4 pos2 = physics2->getActor()->getTransformComponent().getWorldTransform().getPosition();
+
+					if ((pos2 - pos1).dot(n) < 0)
+						n = { -n.x,-n.y,-n.z,-n.w };
+
+					if (v1.dot(n) -v2.dot(n) < 0 && physics1->isDynamic() && physics2->isDynamic())
+						continue;
+
+					smthCollided = true;
 
 					physics1->getActor()->getTransformComponent().setTransform(entity1.originalTransform);
 					physics2->getActor()->getTransformComponent().setTransform(entity2.originalTransform);
@@ -76,11 +93,7 @@ void PhysicsSystem::update(Scene& scene, float dt)
 
 					float m1 = physics1->getMass();
 					float m2 = physics2->getMass();
-
-					V4 v1 = entity1.physics->getVelocity();
-					V4 v2 = entity2.physics->getVelocity();
-
-					V4 n = nOpt.value();
+					
 					float j = (v1 - v2).dot(n) * (e + 1) * (m1 * m2) / (m1 + m2);
 
 					V4 newV1 = v1 - n * (j / m1);
