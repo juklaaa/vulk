@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <cassert>
 
 struct V4
 {
@@ -110,6 +111,17 @@ struct Mtx
 		return m;
 	}
 
+	static Mtx scale(V4 vec)
+	{
+		Mtx m;
+		memset(&m, 0, sizeof(m));
+		m.rows[0][0] = vec.x;
+		m.rows[1][1] = vec.y;
+		m.rows[2][2] = vec.z;
+		m.rows[3][3] = 1.0f;
+		return m;
+	}
+
 	V4 getColumn(int i) const
 	{
 		return V4(rows[0][i], rows[1][i], rows[2][i], rows[3][i]);
@@ -130,11 +142,11 @@ struct Mtx
 		return m;
 	}
 
-	V4 operator * (const V4& v) const
+	friend V4 operator * (const V4& v, const Mtx& m)
 	{
 		V4 res;
 		for (int i = 0; i < 4; ++i)
-			res[i] = rows[i].dot(v);
+			res[i] = v.dot(m.getColumn(i));
 
 		return res;
 	}
@@ -149,9 +161,17 @@ struct Mtx
 		return rows[3];
 	}
 
+	bool operator == (const Mtx& other) const
+	{
+		for (int i = 0; i < 4; ++i)
+			if (rows[i] != other.rows[i])
+				return false;
+		return true;
+	}
+
 	Mtx inversedTransform() const
 	{
-		V4 row0 = getRow(0), row1 = getRow(1), row2 = getRow(2), tranform = getRow(3);
+		V4 row0 = getRow(0), row1 = getRow(1), row2 = getRow(2), translation = getRow(3);
 
 		float a = row0[0], b = row0[1], c = row0[2],
 			d = row1[0], e = row1[1], f = row1[2],
@@ -186,9 +206,9 @@ struct Mtx
 		}
 
 		V4 newTransform;
-		newTransform[0] = -(rs[0][0] * tranform[0] + rs[0][1] * tranform[1] + rs[0][2] * tranform[2]);
-		newTransform[1] = -(rs[1][0] * tranform[0] + rs[1][1] * tranform[1] + rs[1][2] * tranform[2]);
-		newTransform[2] = -(rs[2][0] * tranform[0] + rs[2][1] * tranform[1] + rs[2][2] * tranform[2]);
+		newTransform[0] = -(rs[0][0] * translation[0] + rs[0][1] * translation[1] + rs[0][2] * translation[2]);
+		newTransform[1] = -(rs[1][0] * translation[0] + rs[1][1] * translation[1] + rs[1][2] * translation[2]);
+		newTransform[2] = -(rs[2][0] * translation[0] + rs[2][1] * translation[1] + rs[2][2] * translation[2]);
 		newTransform[3] = 1;
 		
 		Mtx inv = {rs[0],rs[1],rs[2], newTransform};
@@ -197,3 +217,28 @@ struct Mtx
 
 	V4 rows[4];
 };
+
+inline void testInverseAlgorithm()
+{
+	assert(
+		Mtx({ 1,0,0,0 },
+			{ 0,1,0,0 },
+			{ 0,0,1,0 },
+			{ 1,2,3,1 }).inversedTransform()
+	==
+		Mtx({ 1,0,0,0 },
+			{ 0,1,0,0 },
+			{ 0,0,1,0 },
+			{ -1,-2,-3,1 }));
+
+	assert(
+		Mtx({ 0,-1,0,0 },
+			{ 1,0,0,0 },
+			{ 0,0,1,0 },
+			{ 1,2,3,1 }).inversedTransform()
+	==
+		Mtx({ 0,1,0,0 },
+			{ -1,0,0,0 },
+			{ 0,0,1,0 },
+			{ -2,1,-3,1 }));
+}
