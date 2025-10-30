@@ -194,6 +194,8 @@ std::optional<V4> SphereBoxCollisionMediator::intersects(const ColliderComponent
 					return (candidate.normal * boxT).normalize();
 				}
 			}
+			// TODO: Julka zrobi :)))
+			return V4{ 0.0f, 0.0f, 1.0f, 0.0f };
 		}
 		else
 		{
