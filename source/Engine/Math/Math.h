@@ -242,3 +242,24 @@ inline void testInverseAlgorithm()
 			{ 0,0,1,0 },
 			{ -2,1,-3,1 }));
 }
+
+struct Quat
+{
+	Quat(const V4& v, float angle)
+	{
+		w = cosf(angle / 2.0f);
+		float sn = sinf(angle / 2.0f);
+		V4 sinv = v * sn;
+		x = sinv.x;
+		y = sinv.y;
+		z = sinv.z;
+	}
+
+	float x;
+	float y;
+	float z;
+	float w;
+};
+
+Quat MtxToQuat(const Mtx& m);
+Mtx QuatToMtx(const Quat& q);

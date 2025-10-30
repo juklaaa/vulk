@@ -7,9 +7,12 @@ class PhysicsComponent : public Component
 {
 public:
 
-	
 	const V4& getVelocity() const { return velocity; }
 	void setVelocity(const V4& v) { velocity = v; }
+	const Quat& getAngularVelocity() const { return angularVelocity; }
+	void setAngularVelocity(const Quat& m) { angularVelocity = m; }
+	const Mtx& getInertia() const { return intertia; }
+	void setInertia(const Mtx& m) { intertia = m; }
 	float getMass() const { return mass; }
 	void setMass(float m) { mass = m; }
 	float getRestitution() const { return restitution; }
@@ -20,8 +23,10 @@ public:
 	
 protected:
 
+	Mtx intertia = Mtx::indentity();
+	Quat angularVelocity = Quat::indentity();
+	V4 velocity = V4::zero();
 	float mass = 1.0f;
 	float restitution = 1.0f;
-	V4 velocity = V4::zero();
 	bool dynamic = true;
 };

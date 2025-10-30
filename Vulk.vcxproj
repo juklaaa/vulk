@@ -108,6 +108,7 @@
   <ItemGroup>
     <ClCompile Include="source\Engine\Actor.cpp" />
     <ClCompile Include="source\Engine\Component.cpp" />
+    <ClCompile Include="source\Engine\Math\Math.cpp" />
     <ClCompile Include="source\Engine\Scene.cpp" />
     <ClCompile Include="source\Engine\TransformComponent.cpp" />
     <ClCompile Include="source\main.cpp" />
