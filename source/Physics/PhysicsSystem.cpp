@@ -36,9 +36,11 @@ void PhysicsSystem::update(Scene& scene, float dt)
 			velocity += acceleration * dt;
 			physics->setVelocity(velocity);
 			entity1_OriginalTransform = transformComponent.getTransform();
+			Quat quatAngularVelocity = physics->getAngularVelocity();// 
+			Mtx mtxAngularVelocity = QuatToMtx(quatAngularVelocity);
 			auto transform = entity1_OriginalTransform;
-			transform = transform * Mtx::translate(velocity * dt) * physics->getAngularVelocity() * 0.5f;
-			transformComponent.setTransform(transformComponent.getTransform() );
+			transform = transform * Mtx::translate(velocity * dt)* mtxAngularVelocity;
+			transformComponent.setTransform(transform);
 		}
 
 		for (auto& entity2 : entities)

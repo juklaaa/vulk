@@ -245,6 +245,8 @@ inline void testInverseAlgorithm()
 
 struct Quat
 {
+	Quat() = default;
+
 	Quat(const V4& v, float angle)
 	{
 		w = cosf(angle / 2.0f);
@@ -253,6 +255,16 @@ struct Quat
 		x = sinv.x;
 		y = sinv.y;
 		z = sinv.z;
+	}
+
+	static Quat indentity()
+	{
+		Quat q;
+		q.x = 0.0f;
+		q.y = 0.0f;
+		q.z = 0.0f;
+		q.w = 1.0f;
+		return q;
 	}
 
 	float x;
