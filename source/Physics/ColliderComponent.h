@@ -32,7 +32,7 @@ public:
 	Mtx getWorldTransform() const;
 
 protected:
-	Mtx transform = Mtx::indentity();
+	Mtx transform = Mtx::identity();
 };
 
 class SphereColliderComponent : public ColliderComponent

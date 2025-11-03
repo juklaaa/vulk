@@ -30,6 +30,8 @@ struct V4
 		throw std::runtime_error("Wrong index");
 	}
 
+	V4 xyz() const { return V4{ x, y, z }; }
+
 	float dot(const V4& v) const
 	{
 		return x * v.x + y * v.y + z * v.z + w * v.w;
@@ -66,7 +68,7 @@ struct Mtx
 {
 	Mtx() = default;
 
-	Mtx(V4 r0, V4 r1, V4 r2, V4 r3)
+	Mtx(const V4& r0, const V4& r1, const V4& r2, const V4& r3)
 	{
 		rows[0] = r0;
 		rows[1] = r1;
@@ -74,7 +76,7 @@ struct Mtx
 		rows[3] = r3;
 	}
 
-	static Mtx indentity()
+	static Mtx identity()
 	{
 		Mtx m;
 		memset(&m, 0, sizeof(m));
@@ -85,7 +87,7 @@ struct Mtx
 		return m;
 	}
 
-	static Mtx rotate(V4 euler)
+	static Mtx rotate(const V4& euler)
 	{
 		Mtx m;
 		memset(&m, 0, sizeof(m));
@@ -95,6 +97,22 @@ struct Mtx
 		m.rows[0] = { cb * cg, sa * sb * cg - ca * sg, ca * sb * cg + sa * sg };
 		m.rows[1] = { cb * sg, sa * sb * sg + ca * cg, ca * sb * sg - sa * cg };
 		m.rows[2] = { -sb, sa * cb, ca * cb };
+		m.rows[3][3] = 1.0f;
+		return m;
+	}
+
+	static Mtx rotate(const V4& axis, float angle)
+	{
+		assert(axis.length2() == 1.0f);
+		Mtx m;
+		memset(&m, 0, sizeof(m));
+		float ct = cosf(angle);
+		float omct = 1.0f - ct;
+		float st = sinf(angle);
+		const V4& u = axis;
+		m.rows[0] = {u.x*u.x*omct + ct, u.x*u.y*omct - u.z*st, u.x*u.z*omct + u.y*st};
+		m.rows[1] = {u.x*u.y*omct + u.z*st, u.y*u.y*omct + ct, u.y*u.z*omct - u.x*st};
+		m.rows[2] = {u.x*u.z*omct - u.y*st, u.y*u.z*omct + u.x*st, u.z*u.z*omct + ct};
 		m.rows[3][3] = 1.0f;
 		return m;
 	}
@@ -257,7 +275,7 @@ struct Quat
 		z = sinv.z;
 	}
 
-	static Quat indentity()
+	static Quat identity()
 	{
 		Quat q;
 		q.x = 0.0f;

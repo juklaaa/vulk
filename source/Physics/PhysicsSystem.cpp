@@ -28,66 +28,71 @@ void PhysicsSystem::update(Scene& scene, float dt)
 	{
 		Mtx entity1_OriginalTransform;
 		auto physics = entity1.physics;
-		if (physics->isDynamic())
+		if (physics->getFlags() & PhysicsComponent::Dynamic)
 		{
 			TransformComponent& transformComponent = physics->getActor()->getTransformComponent();
 			V4 velocity = physics->getVelocity();
-			V4 acceleration = V4{ 0.0f, 0.0f,-0.0000025f };
-			velocity += acceleration * dt;
+			if (physics->getFlags() & PhysicsComponent::Gravity)
+			{
+				V4 acceleration = V4{ 0.0f, 0.0f,-0.0000025f };
+				velocity += acceleration * dt;
+			}
 			physics->setVelocity(velocity);
 			entity1_OriginalTransform = transformComponent.getTransform();
-			Quat quatAngularVelocity = physics->getAngularVelocity();// 
-			Mtx mtxAngularVelocity = QuatToMtx(quatAngularVelocity);
 			auto transform = entity1_OriginalTransform;
-			transform = transform * Mtx::translate(velocity * dt)* mtxAngularVelocity;
+			auto angularVelocity = physics->getAngularVelocity();
+			transform = transform * Mtx::translate(velocity * dt);
+			if (angularVelocity.w != 0.0f)
+				transform = transform * Mtx::rotate(angularVelocity.xyz(), angularVelocity.w * dt);
 			transformComponent.setTransform(transform);
-		}
 
-		for (auto& entity2 : entities)
-		{
-			if (&entity1 == &entity2)
-				continue;
-
-			auto&& collided = [&entity1_OriginalTransform](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
-				{
-					for (auto collider1 : a.colliders)
-						for (auto collider2 : b.colliders)
-						{
-							if (auto normal = collider1->intersects(*collider2, ColliderComponent::CollisionContext{ entity1_OriginalTransform }))
-							{
-								return normal;
-							}
-						}
-
-					return {};
-				};
-
-			if (auto nOpt = collided(entity1, entity2))
+			for (auto& entity2 : entities)
 			{
-				auto physics1 = entity1.physics;
-				auto physics2 = entity2.physics;
+				if (&entity1 == &entity2)
+					continue;
 
-				physics1->getActor()->getTransformComponent().setTransform(entity1_OriginalTransform);
+				auto&& collided = [&entity1_OriginalTransform](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
+					{
+						for (auto collider1 : a.colliders)
+							for (auto collider2 : b.colliders)
+							{
+								if (auto normal = collider1->intersects(*collider2, ColliderComponent::CollisionContext{ entity1_OriginalTransform }))
+								{
+									return normal;
+								}
+							}
 
-				float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
+						return {};
+					};
 
-				float m1 = physics1->getMass();
-				float m2 = physics2->getMass();
+				if (auto nOpt = collided(entity1, entity2))
+				{
+					auto physics1 = entity1.physics;
+					auto physics2 = entity2.physics;
 
-				V4 v1 = entity1.physics->getVelocity();
-				V4 v2 = entity2.physics->getVelocity();
+					physics1->getActor()->getTransformComponent().setTransform(entity1_OriginalTransform);
 
-				V4 n = nOpt.value();
-				float j = (v1 - v2).dot(n) * (e + 1) * (m1 * m2) / (m1 + m2);
+					float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
 
-				V4 newV1 = v1 - n * (j / m1);
-				V4 newV2 = v2 + n * (j / m2);
+					float invM1 = physics1->getFlags() & PhysicsComponent::Heavy ? 0.0f : 1.0f / physics1->getMass();
+					float invM2 = physics2->getFlags() & PhysicsComponent::Heavy ? 0.0f : 1.0f / physics2->getMass();
 
-				if (physics1->isDynamic())
-					physics1->setVelocity(newV1);
+					V4 v1 = entity1.physics->getVelocity();
+					V4 v2 = entity2.physics->getVelocity();
 
-				if (physics2->isDynamic())
-					physics2->setVelocity(newV2);
+					V4 n = nOpt.value();
+					assert(invM1 + invM2 != 0.0f);
+					float j = (v1 - v2).dot(n) * (e + 1) / (n.dot(n) * (invM1 + invM2));
+
+					V4 newV1 = v1 - n * (j * invM1);
+					V4 newV2 = v2 + n * (j * invM2);
+
+					if (physics1->getFlags() & PhysicsComponent::Dynamic)
+						physics1->setVelocity(newV1);
+
+					if (physics2->getFlags() & PhysicsComponent::Dynamic)
+						physics2->setVelocity(newV2);
+				}
 			}
 		}
 	}
