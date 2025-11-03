@@ -109,5 +109,8 @@
     <ClCompile Include="source\Physics\ColliderComponent.cpp">
       <Filter>Source Files\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="source\Engine\Math\Math.cpp">
+      <Filter>Source Files\Engine\Math</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

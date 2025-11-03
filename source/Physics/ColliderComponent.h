@@ -20,7 +20,13 @@ public:
 
 	virtual Type getType() const = 0;
 
-	std::optional<V4> intersects(ColliderComponent& other) const;
+	struct CollisionContext
+	{
+		Mtx prevPosition;
+		const ColliderComponent* owner = nullptr;
+	};
+
+	std::optional<V4> intersects(ColliderComponent& other, std::optional<CollisionContext> context) const;
 	void setTransform(const Mtx& transform);
 	const Mtx& getTransform() const;
 	Mtx getWorldTransform() const;
