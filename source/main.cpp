@@ -31,8 +31,7 @@ public:
 		Model floorModel;
 		floorModel.generatePlane(&renderer,8);
 		auto floorActor = scene.addActor();
-		floorActor->addComponent<PhysicsComponent>() ->setMass(9999.0f);//TODO infinite mass
-		floorActor->getComponent<PhysicsComponent>()->setDynamic(false);
+		floorActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,4.0f });//left wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,-4.0f });//right wall
@@ -49,8 +48,7 @@ public:
 		Model tableModel;
 		tableModel.generateCube(&renderer, 1);
 		auto tableActor = scene.addActor();
-		tableActor->addComponent<PhysicsComponent>()->setMass(9999.0f);
-		tableActor->getComponent<PhysicsComponent>()->setDynamic(false);
+		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy)->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
 		tableActor->addComponent<BoxColliderComponent>();
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
@@ -74,7 +72,7 @@ public:
 			actor->addComponent<VisualComponent>()->setModel(&sphererModel);
 			actor->getComponent<VisualComponent>()->setMaterial(&spheresMatirials[j]);
 			actor->getTransformComponent().setTransform(Mtx::translate({ i - 3, 0.0f, 1.0f }));
-			actor->addComponent<PhysicsComponent>() ->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
+			actor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Gravity)->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
 			actor->addComponent<SphereColliderComponent>();
 			actor->getComponent<PhysicsComponent>()->setMass(i + 3);
 			actor->getComponent<PhysicsComponent>()->setRestitution(0.99f);

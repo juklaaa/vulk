@@ -7,26 +7,34 @@ class PhysicsComponent : public Component
 {
 public:
 
-	const V4& getVelocity() const { return velocity; }
-	void setVelocity(const V4& v) { velocity = v; }
-	const Quat& getAngularVelocity() const { return angularVelocity; }
-	void setAngularVelocity(const Quat& m) { angularVelocity = m; }
-	const Mtx& getInertia() const { return intertia; }
-	void setInertia(const Mtx& m) { intertia = m; }
-	float getMass() const { return mass; }
-	void setMass(float m) { mass = m; }
-	float getRestitution() const { return restitution; }
-	void setRestitution(float e) { restitution = e; }	
+	enum Flags : uint8_t
+	{
+		None,
+		Dynamic = 1,
+		Gravity = 1 << 1,
+		Heavy = 1 << 2
+	};
 
-	void setDynamic(bool b) { dynamic = b; }
-	bool isDynamic() const { return dynamic; }
+	const V4& getVelocity() const { return velocity; }
+	PhysicsComponent* setVelocity(const V4& v) { velocity = v; return this; }
+	const V4& getAngularVelocity() const { return angularVelocity; }
+	PhysicsComponent* setAngularVelocity(const V4& v) { angularVelocity = v; return this; }
+	const Mtx& getInertia() const { return intertia; }
+	PhysicsComponent* setInertia(const Mtx& m) { intertia = m; return this; }
+	float getMass() const { return mass; }
+	PhysicsComponent* setMass(float m) { mass = m; return this; }
+	float getRestitution() const { return restitution; }
+	PhysicsComponent* setRestitution(float e) { restitution = e; return this; }
+
+	Flags getFlags() const { return flags; }
+	PhysicsComponent* setFlags(int f) { flags = (Flags)f; return this; }
 	
 protected:
 
-	Mtx intertia = Mtx::indentity();
-	Quat angularVelocity = Quat::indentity();
+	Mtx intertia = Mtx::identity();
+	V4 angularVelocity = V4::zero(); // As axis-angle
 	V4 velocity = V4::zero();
 	float mass = 1.0f;
 	float restitution = 1.0f;
-	bool dynamic = true;
+	Flags flags = None;
 };
