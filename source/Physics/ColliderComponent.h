@@ -6,6 +6,12 @@
 
 class Actor;
 
+struct Collision
+{
+	V4 point;
+	V4 normal;
+};
+
 class ColliderComponent : public Component
 {
 public:
@@ -20,13 +26,13 @@ public:
 
 	virtual Type getType() const = 0;
 
-	struct CollisionContext
+	struct Context
 	{
 		Mtx prevPosition;
 		const ColliderComponent* owner = nullptr;
 	};
 
-	std::optional<V4> intersects(ColliderComponent& other, std::optional<CollisionContext> context) const;
+	std::optional<Collision> intersects(ColliderComponent& other, std::optional<Context> context) const;
 	void setTransform(const Mtx& transform);
 	const Mtx& getTransform() const;
 	Mtx getWorldTransform() const;
@@ -59,3 +65,16 @@ public:
 protected:
 	V4 equation = { 0.0f, 1.0f, 1.0f, 0.0f };	
 };
+
+struct AABB
+{
+	V4 min = V4::zero();
+	V4 max = V4::zero();
+};
+
+struct RayIntersectResult
+{
+	V4 point = V4::zero();
+	float t = 0.0f;
+};
+std::optional<RayIntersectResult> intersectRayAABB(const V4& point, const V4& dir, const AABB& aabb);

@@ -56,7 +56,9 @@ struct V4
 	V4 operator + (const V4& v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
 	V4 operator - (const V4& v) const { return { x - v.x, y - v.y, z - v.z, w - v.w }; }
 	V4 operator += (const V4& v) { x += v.x; y += v.y; z += v.z; w += v.w; return *this; }
+	V4 operator -= (const V4& v) { x -= v.x; y -= v.y; z -= v.z; w -= v.w; return *this; }
 	bool operator == (const V4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
+	V4 operator / (const V4& v) const { return { x / v.x, y / v.y, z / v.z, w / v.w }; }
 
 	float x;
 	float y;
@@ -174,11 +176,6 @@ struct Mtx
 		return rows[index];
 	}
 
-	V4 getPosition() const
-	{
-		return rows[3];
-	}
-
 	bool operator == (const Mtx& other) const
 	{
 		for (int i = 0; i < 4; ++i)
@@ -231,6 +228,31 @@ struct Mtx
 		
 		Mtx inv = {rs[0],rs[1],rs[2], newTransform};
 		return inv;
+	}
+
+	V4 getPosition() const
+	{
+		return rows[3];
+	}
+
+	V4 getScale() const
+	{
+		return { getColumn(0).xyz().length(),
+				 getColumn(1).xyz().length(),
+				 getColumn(2).xyz().length() };
+	}
+
+	Mtx getRotation() const
+	{
+		V4 scale = getScale();
+		scale.w = 1.0f;
+		return Mtx
+		{
+			rows[0] / scale,
+			rows[1] / scale,
+			rows[2] / scale,
+			{0.0f, 0.0f, 0.0f, 1.0f}
+		};
 	}
 
 	V4 rows[4];

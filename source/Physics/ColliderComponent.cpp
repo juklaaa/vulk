@@ -18,7 +18,7 @@ class CollisionMediator
 public:
 
 	virtual ~CollisionMediator() = default;
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const = 0;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const = 0;
 };
 
 class GeneralCollisionMediator : public CollisionMediator
@@ -27,7 +27,7 @@ public:
 
 	GeneralCollisionMediator();
 	~GeneralCollisionMediator();
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override;
 
 	static GeneralCollisionMediator& getSingleton();
 
@@ -36,7 +36,7 @@ private:
 	std::unordered_map<std::pair<ColliderComponent::Type, ColliderComponent::Type>, CollisionMediator*> mediators;
 };
 
-std::optional<V4> ColliderComponent::intersects(ColliderComponent& other, std::optional<CollisionContext> context) const
+std::optional<Collision> ColliderComponent::intersects(ColliderComponent& other, std::optional<Context> context) const
 {
 	if (context)
 		context->owner = this;
@@ -60,32 +60,32 @@ Mtx ColliderComponent::getWorldTransform() const
 
 class SphereSphereCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override;
 };
 
 class SphereBoxCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override;
 };
 
 class SpherePlaneCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override;
 };
 
 class BoxBoxCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override;
 };
 
 class BoxPlaneCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override;
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override;
 };
 
 class PlanePlaneCollisionMediator : public CollisionMediator
 {
-	virtual std::optional<V4> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const override { return {}; }
+	virtual std::optional<Collision> intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const override { return {}; }
 };
 
 GeneralCollisionMediator::GeneralCollisionMediator()
@@ -110,7 +110,7 @@ GeneralCollisionMediator& GeneralCollisionMediator::getSingleton()
 	return instance;
 }
 
-std::optional<V4> GeneralCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const
+std::optional<Collision> GeneralCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
 {
 	// sort pair
 	const ColliderComponent* colliderA = &collider1;
@@ -126,7 +126,7 @@ std::optional<V4> GeneralCollisionMediator::intersects(const ColliderComponent& 
 	return mediator->intersects(*colliderA, *colliderB, std::move(context));
 }
 
-std::optional<V4> SphereSphereCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const
+std::optional<Collision> SphereSphereCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
 {
 	Mtx cwt1 = collider1.getWorldTransform();
 	Mtx cwt2 = collider2.getWorldTransform();
@@ -138,7 +138,9 @@ std::optional<V4> SphereSphereCollisionMediator::intersects(const ColliderCompon
 
 	if (centerLine.length() < r1 + r2)
 	{
-		return centerLine.normalize();
+		V4 s1 = cwt1.getPosition() + centerLine.normalize() * r1;
+		V4 s2 = cwt2.getPosition() - centerLine.normalize() * r2;
+		return Collision{ (s1 + s2) * 0.5f, centerLine.normalize() };
 	}
 
 	// TODO: use context
@@ -146,68 +148,71 @@ std::optional<V4> SphereSphereCollisionMediator::intersects(const ColliderCompon
 	return {};
 }
 
-std::optional<V4> SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const
+std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
 {
 	Mtx sphereT = collider1.getWorldTransform();
 	V4 sphereC_World = sphereT.getPosition();
 	float r = 0.5f * V4(sphereT[0][0], sphereT[1][0], sphereT[2][0], 0.0f).length();
 	const BoxColliderComponent& box = static_cast<const BoxColliderComponent&>(collider2);
 	Mtx boxT = box.getWorldTransform();
-	Mtx invBoxT = boxT.inversedTransform();
-	Mtx sphereT_Box = invBoxT * sphereT;
+	Mtx boxR = boxT.getRotation();
+	Mtx invBoxR = boxR.inversedTransform();
+	Mtx boxAABB = invBoxR * boxT;
+	Mtx sphereT_Box = invBoxR * sphereT;
 	
 	Mtx sphereTPrev_Box;
 	if (context)
-		if (context->owner == &collider1)
-			sphereTPrev_Box = invBoxT * context->prevPosition;
-		else
-			sphereTPrev_Box = context->prevPosition.inversedTransform() * sphereT;
-
-	V4 sphereC_Box = sphereT_Box.getPosition();
-	V4 projBoxSphereC_Box{ std::clamp(sphereC_Box.x, -0.5f, 0.5f), std::clamp(sphereC_Box.y, -0.5f, 0.5f), std::clamp(sphereC_Box.z, -0.5f, 0.5f), 1.0f };
-	V4 projSphereC_World = projBoxSphereC_Box * boxT;
-	if (projSphereC_World.dist2(sphereC_World) < r * r)
 	{
-		if (context)
+		if (context->owner == &collider1)
 		{
-			// We've got a collision now let's find the normal
-			struct PointNormal
-			{
-				V4 point;
-				V4 normal;
-			};
-			std::array<PointNormal, 6> projCandidates;
-			projCandidates.fill({ projBoxSphereC_Box, V4::zero() });
-			for (int i = 0; i < 3; ++i)
-				for (int j = 0; j < 2; ++j)
-				{
-					projCandidates[i * 2 + j].point[i] = -0.5f + j;
-					projCandidates[i * 2 + j].point = projCandidates[i * 2 + j].point * boxT;
-					projCandidates[i * 2 + j].normal[i] = -1.0f + 2 * j;
-				}
-
-			for (auto& candidate : projCandidates)
-			{
-				if (candidate.point.dist2(sphereC_World) < r * r &&
-					candidate.normal.dot(sphereC_Box - sphereTPrev_Box.getPosition()) < 0.0f)
-				{
-					return (candidate.normal * boxT).normalize();
-				}
-			}
-			// TODO: Julka zrobi :)))
-			return V4{ 0.0f, 0.0f, 1.0f, 0.0f };
+			sphereTPrev_Box = invBoxR * context->prevPosition;
 		}
 		else
 		{
-			// TODO: Julka zrobi :)))
-			return V4{ 0.0f, 0.0f, 1.0f, 0.0f };
+			sphereTPrev_Box = context->prevPosition.getRotation().inversedTransform() * sphereT;
 		}
 	}
+	else
+		return {};
 
-	return {};
+	V4 sphereC_Box = sphereT_Box.getPosition();
+	V4 spherePrevC_Box = sphereTPrev_Box.getPosition();
+	V4 spherePath_Box = sphereC_Box - spherePrevC_Box;
+	AABB aabb
+	{
+		V4{-0.5f, -0.5f, -0.5f, 1.0f} * boxAABB,
+		V4{0.5f, 0.5f, 0.5f, 1.0f} * boxAABB
+	};
+	AABB aabbEx = aabb;
+	aabbEx.min -= V4{ r, r, r, 0.0f };
+	aabbEx.max += V4{ r, r, r, 0.0f };
+
+	auto rayResult = intersectRayAABB(spherePrevC_Box, sphereC_Box - spherePrevC_Box, aabbEx);
+	if (!rayResult)
+		return {};
+
+	V4 p = rayResult->point;
+	V4 p2min = p - aabbEx.min;
+	V4 p2max = p - aabbEx.max;
+	const float eps = 0.0001f;
+	V4 normal{ 1.0f, 0.0f, 0.0f};
+	if (fabs(p2min.x) < eps)
+		normal = V4{ -1.0f, 0.0f, 0.0f };
+	if (fabs(p2max.x) < eps)
+		normal = V4{ 1.0f, 0.0f, 0.0f };
+	if (fabs(p2min.y) < eps)
+		normal = V4{ 0.0f, -1.0f, 0.0f };
+	if (fabs(p2max.y) < eps)
+		normal = V4{ 0.0f, 1.0f, 0.0f };
+	if (fabs(p2min.z) < eps)
+		normal = V4{ 0.0f, 0.0f, -1.0f };
+	if (fabs(p2max.z) < eps)
+		normal = V4{ 0.0f, 0.0f, 1.0f };
+
+	return Collision{rayResult->point * boxR, normal * boxR};
 }
 
-std::optional<V4> SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const
+std::optional<Collision> SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
 {
 	Mtx cwt = collider1.getWorldTransform();
 
@@ -215,26 +220,56 @@ std::optional<V4> SpherePlaneCollisionMediator::intersects(const ColliderCompone
 
 	V4 planeEq = static_cast<const PlaneColliderComponent&>(collider2).getEquation();
 	float A = planeEq.x, B = planeEq.y, C = planeEq.z, D = planeEq.w;
-	float x0 = cwt[3][0], y0 = cwt[3][1], z0 = cwt[3][2];
+	V4 sphereC = cwt.getPosition();
+	float x0 = sphereC.x, y0 = sphereC.y, z0 = sphereC.z;
 	float d = fabs(A*x0 + B*y0 + C*z0 + D)/ sqrt(A*A + B*B + C*C);
 	
 	if (d < r)
 	{
 		V4 normal = V4{ A, B, C, 0.0f }.normalize();
-		return normal;
+		return Collision{ sphereC - normal * r, normal };
 	}
 		
 	return {};
 }
 
-std::optional<V4> BoxBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const
+std::optional<Collision> BoxBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
 {
 	// TODO
 	return {};
 }
 
-std::optional<V4> BoxPlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::CollisionContext> context) const
+std::optional<Collision> BoxPlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
 {
 	// TODO
 	return {};
+}
+
+std::optional<RayIntersectResult> intersectRayAABB(const V4& point, const V4& dir, const AABB& aabb)
+{
+	float tmin = 0.0f;
+	float tmax = std::numeric_limits<float>::max();
+	for (int i = 0; i < 3; i++)
+	{
+		if (fabs(dir[i]) < FLT_EPSILON)
+		{
+			if (point[i] < aabb.min[i] || point[i] > aabb.max[i])
+				return {};
+		}
+		else
+		{
+			float ood = 1.0f / dir[i];
+			float t1 = (aabb.min[i] - point[i]) * ood;
+			float t2 = (aabb.max[i] - point[i]) * ood;
+			if (t1 > t2) 
+				std::swap(t1, t2);
+			if (t1 > tmin)
+				tmin = t1;
+			if (t2 > tmax)
+				tmax = t2;
+			if (tmin > tmax)
+				return {};
+		}
+	}
+	return RayIntersectResult{ point + dir * tmin, tmin };
 }

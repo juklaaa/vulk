@@ -56,9 +56,9 @@ void PhysicsSystem::update(Scene& scene, float dt)
 						for (auto collider1 : a.colliders)
 							for (auto collider2 : b.colliders)
 							{
-								if (auto normal = collider1->intersects(*collider2, ColliderComponent::CollisionContext{ entity1_OriginalTransform }))
+								if (auto collision = collider1->intersects(*collider2, ColliderComponent::Context{ entity1_OriginalTransform }))
 								{
-									return normal;
+									return collision->normal;
 								}
 							}
 
