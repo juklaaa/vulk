@@ -133,19 +133,44 @@ std::optional<Collision> SphereSphereCollisionMediator::intersects(const Collide
 
 	float r1 = 0.5f * V4(cwt1[0][0], cwt1[1][0], cwt1[2][0], 0.0f).length();
 	float r2 = 0.5f * V4(cwt2[0][0], cwt2[1][0], cwt2[2][0], 0.0f).length();
+	float r = r1 + r2;
 
-	V4 centerLine = cwt2.getPosition() - cwt1.getPosition();
+	V4 c1 = cwt1.getPosition();
+	V4 c2 = cwt2.getPosition();
 
-	if (centerLine.length() < r1 + r2)
+	V4 diff = c1 - c2;
+	
+	if (!context)
 	{
-		V4 s1 = cwt1.getPosition() + centerLine.normalize() * r1;
-		V4 s2 = cwt2.getPosition() - centerLine.normalize() * r2;
-		return Collision{ (s1 + s2) * 0.5f, centerLine.normalize() };
+		if (diff.length() < r)
+		{
+			V4 n = diff.normalize();
+			V4 p = c2 + n * r2;
+			return Collision{ p, n };
+		}
+		return{};
 	}
 
-	// TODO: use context
+	V4 pc1 = context->prevPosition.getPosition();
+	V4 v = c1 - pc1;
+	V4 s = pc1 - c2;
+	float a = v.dot(v);
+	if (a < FLT_EPSILON) return {}; 
+	float b = v.dot(s);
+	if (b >= 0.0f) return {}; 
+	float c = s.dot(s) - r * r;
+	float d = b * b - a * c;
+	if (d < 0.0f) return {}; 
 
-	return {};
+	float t = (-b - sqrtf(d)) / a;
+	if ( t > 1.0f) return {};
+
+
+	V4 hitCenter = pc1 + v * t;
+	V4 normal = (hitCenter - c2).normalize();
+	V4 point = c2 + normal * r2;
+	return Collision{ point, normal };
+	
 }
 
 std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
@@ -188,14 +213,17 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 	aabbEx.max += V4{ r, r, r, 0.0f };
 
 	auto rayResult = intersectRayAABB(spherePrevC_Box, sphereC_Box - spherePrevC_Box, aabbEx);
-	if (!rayResult)
+	if (!rayResult || rayResult->t > 1.0f)
 		return {};
 
+	
+	const float eps =  0.5f;
+	
 	V4 p = rayResult->point;
 	V4 p2min = p - aabbEx.min;
 	V4 p2max = p - aabbEx.max;
-	const float eps = 0.0001f;
-	V4 normal{ 1.0f, 0.0f, 0.0f};
+	
+	V4 normal{ 0.0f, 0.0f, 1.0f};
 	if (fabs(p2min.x) < eps)
 		normal = V4{ -1.0f, 0.0f, 0.0f };
 	if (fabs(p2max.x) < eps)
@@ -209,7 +237,10 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 	if (fabs(p2max.z) < eps)
 		normal = V4{ 0.0f, 0.0f, 1.0f };
 
-	return Collision{rayResult->point * boxR, normal * boxR};
+	V4 point = rayResult->point * boxR;
+	V4 n = normal * boxR;
+
+	return Collision{ point, n.normalize()};
 }
 
 std::optional<Collision> SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
@@ -251,6 +282,7 @@ std::optional<RayIntersectResult> intersectRayAABB(const V4& point, const V4& di
 	float tmax = std::numeric_limits<float>::max();
 	for (int i = 0; i < 3; i++)
 	{
+		
 		if (fabs(dir[i]) < FLT_EPSILON)
 		{
 			if (point[i] < aabb.min[i] || point[i] > aabb.max[i])
@@ -265,11 +297,12 @@ std::optional<RayIntersectResult> intersectRayAABB(const V4& point, const V4& di
 				std::swap(t1, t2);
 			if (t1 > tmin)
 				tmin = t1;
-			if (t2 > tmax)
+			if (t2 < tmax)
 				tmax = t2;
 			if (tmin > tmax)
 				return {};
 		}
 	}
+	
 	return RayIntersectResult{ point + dir * tmin, tmin };
 }

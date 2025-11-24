@@ -52,13 +52,13 @@ public:
 		tableActor->addComponent<BoxColliderComponent>();
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
-		tableActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.0f }) /* Mtx::scale({ 2.0f, 1.0f, 0.25f })*/);
-
+		tableActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.0f }) * Mtx::scale({ 2.0f, 1.0f, 0.25f }));
+		
 		//spheres		
 		Model sphererModel;
 		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
 
-		const int numSpheres = 1;
+		const int numSpheres = 5;
 		std::vector<Actor*> spheres;
 		Material spheresMatirials[numSpheres];
 		for (float i = 0; i < numSpheres; i++)
@@ -75,7 +75,7 @@ public:
 			actor->getTransformComponent().setTransform(Mtx::translate({ i * 1.1f - 3, 0.0f, 1.0f }));
 			actor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Gravity)->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
 			actor->addComponent<SphereColliderComponent>();
-			actor->getComponent<PhysicsComponent>()->setMass(i + 3);
+			actor->getComponent<PhysicsComponent>()->setMass(i + numSpheres);
 			actor->getComponent<PhysicsComponent>()->setRestitution(0.99f);
 			spheres.push_back(actor);
 		}
