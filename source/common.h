@@ -14,7 +14,9 @@
 #include <set>
 #include <stdexcept>
 #include <unordered_map>
-#include <vector> 
+#include <vector>
+#include <math.h>
+#include <numbers>
 
 using uint = unsigned int;
 using uchar = unsigned char;

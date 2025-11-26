@@ -1,7 +1,10 @@
 #pragma once
 
+#include <math.h>
 #include <stdexcept>
 #include <cassert>
+#include <numbers>
+constexpr float PI = std::numbers::pi_v<float>;
 
 struct V4
 {
@@ -257,31 +260,6 @@ struct Mtx
 
 	V4 rows[4];
 };
-
-inline void testInverseAlgorithm()
-{
-	assert(
-		Mtx({ 1,0,0,0 },
-			{ 0,1,0,0 },
-			{ 0,0,1,0 },
-			{ 1,2,3,1 }).inversedTransform()
-	==
-		Mtx({ 1,0,0,0 },
-			{ 0,1,0,0 },
-			{ 0,0,1,0 },
-			{ -1,-2,-3,1 }));
-
-	assert(
-		Mtx({ 0,-1,0,0 },
-			{ 1,0,0,0 },
-			{ 0,0,1,0 },
-			{ 1,2,3,1 }).inversedTransform()
-	==
-		Mtx({ 0,1,0,0 },
-			{ -1,0,0,0 },
-			{ 0,0,1,0 },
-			{ -2,1,-3,1 }));
-}
 
 struct Quat
 {

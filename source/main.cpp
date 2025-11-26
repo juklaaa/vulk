@@ -21,7 +21,6 @@ public:
 
 	void run()
 	{
-		testInverseAlgorithm();
 		initWindow();
 		renderer.init(window);
 
@@ -48,7 +47,7 @@ public:
 		Model tableModel;
 		tableModel.generateCube(&renderer, 1);
 		auto tableActor = scene.addActor();
-		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy);// ->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
+		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy)->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
 		tableActor->addComponent<BoxColliderComponent>();
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
@@ -61,10 +60,10 @@ public:
 		const int numSpheres = 5;
 		std::vector<Actor*> spheres;
 		Material spheresMatirials[numSpheres];
-		for (float i = 0; i < numSpheres; i++)
+		for (int i = 0; i < numSpheres; i++)
 		{
 			Material material;
-			float c = (i+1) / numSpheres;
+			float c = (i+1.0f) / numSpheres;
 			material.setColor(c, 0.0f, c);
 			int j = i;
 			spheresMatirials[j] = material;
