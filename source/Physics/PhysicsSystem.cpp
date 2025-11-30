@@ -45,7 +45,12 @@ void PhysicsSystem::update(Scene& scene, float dt)
 			auto angularVelocity = physics->getAngularVelocity();
 			transform = transform * Mtx::translate(velocity * dt);
 			if (angularVelocity.w != 0.0f)
-				transform = Mtx::rotate(angularVelocity.xyz(), angularVelocity.w * dt) * transform;
+			{
+				V4 pos = transform.getPosition();
+				transform = transform * Mtx::translate(pos * -1.0f);
+				transform = transform * Mtx::rotate(angularVelocity.xyz(), angularVelocity.w * dt);
+				transform = transform * Mtx::translate(pos);
+			}
 			transformComponent.setTransform(transform);
 
 			for (auto& entity2 : entities)
