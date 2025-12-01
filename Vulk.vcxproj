@@ -57,7 +57,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,7 +73,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -93,6 +93,7 @@
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\Engine\Actor.h" />
     <ClInclude Include="source\Engine\Component.h" />
+    <ClInclude Include="source\Engine\Log.h" />
     <ClInclude Include="source\Engine\Math\Math.h" />
     <ClInclude Include="source\Engine\Scene.h" />
     <ClInclude Include="source\Engine\TransformComponent.h" />
@@ -108,6 +109,7 @@
   <ItemGroup>
     <ClCompile Include="source\Engine\Actor.cpp" />
     <ClCompile Include="source\Engine\Component.cpp" />
+    <ClCompile Include="source\Engine\Log.cpp" />
     <ClCompile Include="source\Engine\Math\Math.cpp" />
     <ClCompile Include="source\Engine\Scene.cpp" />
     <ClCompile Include="source\Engine\TransformComponent.cpp" />

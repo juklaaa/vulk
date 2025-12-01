@@ -71,6 +71,9 @@
     <ClInclude Include="source\Physics\ColliderComponent.h">
       <Filter>Source Files\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="source\Engine\Log.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -111,6 +114,9 @@
     </ClCompile>
     <ClCompile Include="source\Engine\Math\Math.cpp">
       <Filter>Source Files\Engine\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Log.cpp">
+      <Filter>Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

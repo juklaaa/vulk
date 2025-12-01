@@ -11,6 +11,7 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/ColliderComponent.h"
 #include "Engine/Scene.h"
+#include "Engine/Log.h"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -21,6 +22,7 @@ public:
 
 	void run()
 	{
+		Logger::getSingleton().init();
 		initWindow();
 		renderer.init(window);
 
@@ -47,17 +49,17 @@ public:
 		Model tableModel;
 		tableModel.generateCube(&renderer, 1);
 		auto tableActor = scene.addActor();
-		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy)->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
+		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy);// ->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
 		tableActor->addComponent<BoxColliderComponent>();
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
-		tableActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.0f }) * Mtx::scale({ 2.0f, 1.0f, 0.25f }));
+		tableActor->getTransformComponent().setTransform(Mtx::scale({ 1.0f, 1.0f, 0.25f }) * Mtx::translate({ 0.0f, 0.0f, -1.0f }) /* Mtx::rotate({ 0.0f, PI / 4, 0.0f })*/);
 		
 		//spheres		
 		Model sphererModel;
 		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
 
-		const int numSpheres = 5;
+		const int numSpheres = 3;
 		std::vector<Actor*> spheres;
 		Material spheresMatirials[numSpheres];
 		for (int i = 0; i < numSpheres; i++)
@@ -71,7 +73,7 @@ public:
 			auto actor = scene.addActor();
 			actor->addComponent<VisualComponent>()->setModel(&sphererModel);
 			actor->getComponent<VisualComponent>()->setMaterial(&spheresMatirials[j]);
-			actor->getTransformComponent().setTransform(Mtx::translate({ i * 1.1f - 3, 0.0f, 1.0f }));
+			actor->getTransformComponent().setTransform(Mtx::translate({ i * 1.1f - numSpheres / 2, 0.0f, 1.0f }));
 			actor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Gravity)->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
 			actor->addComponent<SphereColliderComponent>();
 			actor->getComponent<PhysicsComponent>()->setMass(i + numSpheres);

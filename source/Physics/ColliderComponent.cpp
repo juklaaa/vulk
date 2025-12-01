@@ -1,6 +1,7 @@
 #include "ColliderComponent.h"
 #include "Engine/Actor.h"
 #include "Engine/TransformComponent.h"
+#include "Engine/Log.h"
 
 namespace std
 {
@@ -152,6 +153,8 @@ std::optional<Collision> SphereSphereCollisionMediator::intersects(const Collide
 	}
 
 	V4 pc1 = context->prevPosition.getPosition();
+	//log(Collision, Verbose, "pc1={}", pc1);
+
 	V4 v = c1 - pc1;
 	V4 s = pc1 - c2;
 	float a = v.dot(v);
@@ -177,24 +180,21 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 {
 	Mtx sphereT = collider1.getWorldTransform();
 	V4 sphereC_World = sphereT.getPosition();
-	float r = 0.5f * V4(sphereT[0][0], sphereT[1][0], sphereT[2][0], 0.0f).length();
 	const BoxColliderComponent& box = static_cast<const BoxColliderComponent&>(collider2);
 	Mtx boxT = box.getWorldTransform();
-	Mtx boxR = boxT.getRotation();
-	Mtx invBoxR = boxR.inversedTransform();
-	Mtx boxAABB = invBoxR * boxT;
-	Mtx sphereT_Box = invBoxR * sphereT;
+	Mtx invBoxT = boxT.inversedTransform();
+	Mtx sphereT_Box = invBoxT * sphereT;
 	
 	Mtx sphereTPrev_Box;
 	if (context)
 	{
 		if (context->owner == &collider1)
 		{
-			sphereTPrev_Box = invBoxR * context->prevPosition;
+			sphereTPrev_Box = invBoxT * context->prevPosition;
 		}
 		else
 		{
-			sphereTPrev_Box = context->prevPosition.getRotation().inversedTransform() * sphereT;
+			sphereTPrev_Box = context->prevPosition.inversedTransform() * sphereT;
 		}
 	}
 	else
@@ -205,19 +205,19 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 	V4 spherePath_Box = sphereC_Box - spherePrevC_Box;
 	AABB aabb
 	{
-		V4{-0.5f, -0.5f, -0.5f, 1.0f} * boxAABB,
-		V4{0.5f, 0.5f, 0.5f, 1.0f} * boxAABB
+		V4{-0.5f, -0.5f, -0.5f, 1.0f},
+		V4{0.5f, 0.5f, 0.5f, 1.0f}
 	};
 	AABB aabbEx = aabb;
-	aabbEx.min -= V4{ r, r, r, 0.0f };
-	aabbEx.max += V4{ r, r, r, 0.0f };
+	aabbEx.min -= V4{ 0.5f, 0.5f, 0.5f, 0.0f } * sphereT_Box;
+	aabbEx.max += V4{ 0.5f, 0.5f, 0.5f, 0.0f } * sphereT_Box;
 
 	auto rayResult = intersectRayAABB(spherePrevC_Box, sphereC_Box - spherePrevC_Box, aabbEx);
 	if (!rayResult || rayResult->t > 1.0f)
 		return {};
 
 	
-	const float eps =  0.5f;
+	const float eps =  FLT_EPSILON;
 	
 	V4 p = rayResult->point;
 	V4 p2min = p - aabbEx.min;
@@ -237,8 +237,8 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 	if (fabs(p2max.z) < eps)
 		normal = V4{ 0.0f, 0.0f, 1.0f };
 
-	V4 point = rayResult->point * boxR;
-	V4 n = normal * boxR;
+	V4 point = rayResult->point * boxT;
+	V4 n = normal * boxT;
 
 	return Collision{ point, n.normalize()};
 }
