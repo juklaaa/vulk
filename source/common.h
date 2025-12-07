@@ -17,6 +17,9 @@
 #include <vector>
 #include <math.h>
 #include <numbers>
+#include <print>
+#include <string>
+#include <format>
 
 using uint = unsigned int;
 using uchar = unsigned char;
