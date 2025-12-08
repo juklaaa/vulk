@@ -17,6 +17,12 @@
     <Filter Include="Source Files\Physics">
       <UniqueIdentifier>{03045b16-5a66-416e-aab1-6c2639d59229}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Animation">
+      <UniqueIdentifier>{f88b6140-8780-4686-a1f4-91c6409c32c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Importers">
+      <UniqueIdentifier>{c7c8ef73-314a-4925-af61-4ccd61002956}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader.frag" />
@@ -74,6 +80,15 @@
     <ClInclude Include="source\Engine\Log.h">
       <Filter>Source Files\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="source\Animation\SkelAnimation.h">
+      <Filter>Source Files\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Animation\Skeleton.h">
+      <Filter>Source Files\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Importers\Importer_IQM.h">
+      <Filter>Source Files\Importers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -117,6 +132,12 @@
     </ClCompile>
     <ClCompile Include="source\Engine\Log.cpp">
       <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Animation\SkelAnimation.cpp">
+      <Filter>Source Files\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Animation\Skeleton.cpp">
+      <Filter>Source Files\Animation</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -90,6 +90,8 @@
     <None Include="shaders\shader.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\Animation\SkelAnimation.h" />
+    <ClInclude Include="source\Animation\Skeleton.h" />
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\Engine\Actor.h" />
     <ClInclude Include="source\Engine\Component.h" />
@@ -97,6 +99,7 @@
     <ClInclude Include="source\Engine\Math\Math.h" />
     <ClInclude Include="source\Engine\Scene.h" />
     <ClInclude Include="source\Engine\TransformComponent.h" />
+    <ClInclude Include="source\Importers\Importer_IQM.h" />
     <ClInclude Include="source\Physics\ColliderComponent.h" />
     <ClInclude Include="source\Physics\PhysicsComponent.h" />
     <ClInclude Include="source\Physics\PhysicsSystem.h" />
@@ -107,6 +110,8 @@
     <ClInclude Include="source\Rendering\VisualComponent.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Animation\SkelAnimation.cpp" />
+    <ClCompile Include="source\Animation\Skeleton.cpp" />
     <ClCompile Include="source\Engine\Actor.cpp" />
     <ClCompile Include="source\Engine\Component.cpp" />
     <ClCompile Include="source\Engine\Log.cpp" />
