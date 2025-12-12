@@ -10,6 +10,7 @@
 #include "Physics/PhysicsSystem.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/ColliderComponent.h"
+#include "Animation/Skeleton.h"
 #include "Engine/Scene.h"
 #include "Engine/Log.h"
 
@@ -80,6 +81,9 @@ public:
 			actor->getComponent<PhysicsComponent>()->setRestitution(0.99f);
 			spheres.push_back(actor);
 		}
+
+		Skeleton skeleton;
+		skeleton.load("models/tree.iqm");
 
 		mainLoop();
 
