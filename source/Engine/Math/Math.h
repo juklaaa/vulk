@@ -265,6 +265,14 @@ struct Quat
 {
 	Quat() = default;
 
+	Quat(float x_, float y_, float z_, float w_)
+	{
+		x = x_;
+		y = y_;
+		z = z_;
+		w = w_;
+	}
+
 	Quat(const V4& v, float angle)
 	{
 		w = cosf(angle / 2.0f);
