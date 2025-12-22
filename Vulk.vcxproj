@@ -90,6 +90,7 @@
     <None Include="shaders\shader.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\Animation\Mesh.h" />
     <ClInclude Include="source\Animation\SkelAnimation.h" />
     <ClInclude Include="source\Animation\Skeleton.h" />
     <ClInclude Include="source\Common.h" />
@@ -110,6 +111,7 @@
     <ClInclude Include="source\Rendering\VisualComponent.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Animation\Mesh.cpp" />
     <ClCompile Include="source\Animation\SkelAnimation.cpp" />
     <ClCompile Include="source\Animation\Skeleton.cpp" />
     <ClCompile Include="source\Engine\Actor.cpp" />
