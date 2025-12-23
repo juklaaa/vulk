@@ -89,6 +89,9 @@
     <ClInclude Include="source\Importers\Importer_IQM.h">
       <Filter>Source Files\Importers</Filter>
     </ClInclude>
+    <ClInclude Include="source\Animation\Mesh.h">
+      <Filter>Source Files\Animation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -137,6 +140,9 @@
       <Filter>Source Files\Animation</Filter>
     </ClCompile>
     <ClCompile Include="source\Animation\Skeleton.cpp">
+      <Filter>Source Files\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Animation\Mesh.cpp">
       <Filter>Source Files\Animation</Filter>
     </ClCompile>
   </ItemGroup>

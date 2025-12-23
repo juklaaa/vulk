@@ -50,3 +50,61 @@ struct iqmanim
     float framerate;
     uint flags;
 };
+
+struct iqmmesh
+{
+    uint name;
+    uint material;
+    uint first_vertex, num_vertexes;
+    uint first_triangle, num_triangles;
+};
+
+struct iqmtriangle
+{
+    uint vertex[3];
+};
+
+struct iqmadjacency
+{
+    uint triangle[3];
+};
+
+enum class IQM_VertexArrayType : uint
+{
+    IQM_POSITION = 0,  // float, 3
+    IQM_TEXCOORD = 1,  // float, 2
+    IQM_NORMAL = 2,  // float, 3
+    IQM_TANGENT = 3,  // float, 4
+    IQM_BLENDINDEXES = 4,  // ubyte, 4
+    IQM_BLENDWEIGHTS = 5,  // ubyte, 4
+    IQM_COLOR = 6,  // ubyte, 4
+
+    // all values up to IQM_CUSTOM are reserved for future use
+    // any value >= IQM_CUSTOM is interpreted as CUSTOM type
+    // the value then defines an offset into the string table, where offset = value - IQM_CUSTOM
+    // this must be a valid string naming the type
+    IQM_CUSTOM = 0x10
+};
+
+enum class IQM_Format : uint
+{
+    IQM_BYTE = 0,
+    IQM_UBYTE = 1,
+    IQM_SHORT = 2,
+    IQM_USHORT = 3,
+    IQM_INT = 4,
+    IQM_UINT = 5,
+    IQM_HALF = 6,
+    IQM_FLOAT = 7,
+    IQM_DOUBLE = 8,
+};
+
+struct iqmvertexarray
+{
+    IQM_VertexArrayType type;   // type or custom name
+    uint flags;
+    IQM_Format format; // component format
+    uint size;   // number of components
+    uint offset; // offset to array of tightly packed components, with num_vertexes * size total entries
+    // offset must be aligned to max(sizeof(format), 4)
+};

@@ -70,7 +70,7 @@ std::vector<SkelAnimation> SkelAnimation::load(std::string_view filename)
 						dataFloat[k] = boneDefaults[boneIndex].data[k];
 						if (boneMasks[boneIndex] & (1 << k))
 						{
-							dataFloat[k] += ((float)data[k] / 0xFFFF) * boneDefaults[boneIndex].dataScale[k];
+							dataFloat[k] += (float)data[k] * boneDefaults[boneIndex].dataScale[k];
 						}
 					}
 					auto& d = dataFloat;

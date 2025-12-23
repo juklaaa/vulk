@@ -12,6 +12,7 @@
 #include "Physics/ColliderComponent.h"
 #include "Animation/Skeleton.h"
 #include "Animation/SkelAnimation.h"
+#include "Animation/Mesh.h"
 #include "Engine/Scene.h"
 #include "Engine/Log.h"
 
@@ -85,7 +86,8 @@ public:
 
 		Skeleton skeleton;
 		skeleton.load("models/tree.iqm");
-		SkelAnimation::load("models/tree.iqm");
+		auto animations = SkelAnimation::load("models/tree.iqm");
+		auto meshes = Mesh::load("models/tree.iqm");
 
 		mainLoop();
 
