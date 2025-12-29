@@ -64,10 +64,10 @@ std::vector<Mesh> Mesh::load(std::string_view filepath)
 					auto it = uchars.begin();
 					for (auto& v : vertices) 
 					{ 
-						v.weightIndices.x = *it++;
-						v.weightIndices.y = *it++;
-						v.weightIndices.z = *it++;
-						v.weightIndices.w = *it++;
+						v.boneIndices[0] = *it++;
+						v.boneIndices[1] = *it++;
+						v.boneIndices[2] = *it++;
+						v.boneIndices[3] = *it++;
 					}
 				}
 				if (vertarray.type == IQM_VertexArrayType::IQM_BLENDWEIGHTS)

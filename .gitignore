@@ -1,6 +1,7 @@
 /Vulk.vcxproj.user
 .vs/
 Vulk/
+.idea/
 *.idb
 *.pdb
 *.exe*
