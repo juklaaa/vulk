@@ -29,6 +29,11 @@ public:
 		initWindow();
 		renderer.init(window);
 
+		Skeleton skeleton;
+		skeleton.load("models/tree.iqm");
+		auto animations = SkelAnimation::load("models/tree.iqm");
+		auto meshes = Mesh::load("models/tree.iqm");
+
 		//floor
 		Material floorMaterial;
 		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
@@ -50,7 +55,8 @@ public:
 		Material tableMaterial;
 		tableMaterial.setColor(0.9f, 0.9f, 0.2f);
 		Model tableModel;
-		tableModel.generateCube(&renderer, 1);
+		//tableModel.generateCube(&renderer, 1);
+		tableModel.setMesh(&renderer, &meshes[0]);
 		auto tableActor = scene.addActor();
 		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy);// ->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
 		tableActor->addComponent<BoxColliderComponent>();
@@ -84,10 +90,7 @@ public:
 			spheres.push_back(actor);
 		}
 
-		Skeleton skeleton;
-		skeleton.load("models/tree.iqm");
-		auto animations = SkelAnimation::load("models/tree.iqm");
-		auto meshes = Mesh::load("models/tree.iqm");
+		
 
 		mainLoop();
 

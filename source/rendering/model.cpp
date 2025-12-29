@@ -329,3 +329,56 @@ void Model::generateSphere(Renderer* renderer_, float radius, int segments, int 
 
 	isInitialized = true;
 }
+
+void Model::setMesh(Renderer* renderer_, Mesh* mesh_)
+{
+	renderer = renderer_;
+	mesh = mesh_;
+
+	createMeshVertexBuffer();
+	createMeshIndexBuffer();
+
+	isInitialized = true;
+}
+
+void Model::createMeshVertexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(mesh->vertices[0]) * mesh->vertices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	renderer->getImpl().createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, mesh->vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(getDevice(), stagingBufferMemory);
+
+	renderer->getImpl().createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+	renderer->getImpl().copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+	vkDestroyBuffer(getDevice(), stagingBuffer, nullptr);
+	vkFreeMemory(getDevice(), stagingBufferMemory, nullptr);
+
+}
+void Model::createMeshIndexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(mesh->indices[0]) * mesh->indices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	renderer->getImpl().createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(getDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, mesh->indices.data(), (size_t)bufferSize);
+	vkUnmapMemory(getDevice(), stagingBufferMemory);
+
+	renderer->getImpl().createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+	renderer->getImpl().copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+	vkDestroyBuffer(getDevice(), stagingBuffer, nullptr);
+	vkFreeMemory(getDevice(), stagingBufferMemory, nullptr);
+}

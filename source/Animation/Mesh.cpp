@@ -9,7 +9,10 @@ if (vertarray.type == Type) \
 	for (auto& v : vertices) \
 	{ \
 		for (uint j = 0u; j < vertarray.size; ++j) \
-			v.xxx[j] = *it++; \
+			{\
+				if(j==3) continue;\
+				v.xxx[j] = *it++;\
+			} \
 	} \
 }
 
@@ -50,7 +53,7 @@ std::vector<Mesh> Mesh::load(std::string_view filepath)
 				FILL_VERTEX(IQM_VertexArrayType::IQM_POSITION, pos);
 				FILL_VERTEX(IQM_VertexArrayType::IQM_TEXCOORD, tex);
 				FILL_VERTEX(IQM_VertexArrayType::IQM_NORMAL, normal);
-				FILL_VERTEX(IQM_VertexArrayType::IQM_TANGENT, tangent);
+				FILL_VERTEX(IQM_VertexArrayType::IQM_TANGENT, tangent); //TO DO
 			}
 			else if (vertarray.format == IQM_Format::IQM_UBYTE)
 			{
@@ -61,8 +64,10 @@ std::vector<Mesh> Mesh::load(std::string_view filepath)
 					auto it = uchars.begin();
 					for (auto& v : vertices) 
 					{ 
-						for (uint j = 0u; j < vertarray.size; ++j) 
-							v.weights[j].index = *it++;
+						v.weightIndices.x = *it++;
+						v.weightIndices.y = *it++;
+						v.weightIndices.z = *it++;
+						v.weightIndices.w = *it++;
 					}
 				}
 				if (vertarray.type == IQM_VertexArrayType::IQM_BLENDWEIGHTS)
@@ -70,8 +75,10 @@ std::vector<Mesh> Mesh::load(std::string_view filepath)
 					auto it = uchars.begin();
 					for (auto& v : vertices)
 					{
-						for (uint j = 0u; j < vertarray.size; ++j)
-							v.weights[j].weight = *it++ / 255.0f;
+						v.weights.x = *it++ / 255.0f;
+						v.weights.y = *it++ / 255.0f;
+						v.weights.z = *it++ / 255.0f;
+						v.weights.w = *it++ / 255.0f;
 					}
 				}
 			}

@@ -3,6 +3,9 @@
 #include "Common.h"
 #include "Engine/Math/Math.h"
 
+
+class Model;
+
 class Mesh
 {
 public:
@@ -11,22 +14,19 @@ public:
 
 	struct Vertex
 	{
-		V4 pos;
-		V4 tex;
-		V4 normal;
-		V4 tangent;
+		V3 pos;
+		V3 color = { 1.0f,1.0f,1.0f};
+		V2 tex;
+		V3 normal;
+		V3 tangent;
 		
-		struct BoneWeight
-		{
-			uchar index = 0u;
-			float weight = 0.0f;
-		};
-
-		BoneWeight weights[4];
+		V4 weightIndices = V4::zero();
+		V4 weights = V4::zero();
 	};
 
 protected:
+	friend class Model;
 
 	std::vector<Vertex> vertices;
-	std::vector<ushort> indices;
+	std::vector<uint32_t> indices;
 };

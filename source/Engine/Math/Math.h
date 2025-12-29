@@ -69,6 +69,121 @@ struct V4
 	float w;
 };
 
+struct V3
+{
+	V3() = default;
+	V3(float x_, float y_, float z_)
+		:x(x_), y(y_), z(z_){
+	}
+
+	static V3 zero() { return V3{ 0.0f, 0.0f, 0.0f}; }
+
+	float& operator[] (int index)
+	{
+		if (index == 0) return x;
+		if (index == 1) return y;
+		if (index == 2) return z;
+		throw std::runtime_error("Wrong index");
+	}
+
+	const float& operator[] (int index) const
+	{
+		if (index == 0) return x;
+		if (index == 1) return y;
+		if (index == 2) return z;
+		throw std::runtime_error("Wrong index");
+	}
+
+
+	float dot(const V3& v) const
+	{
+		return x * v.x + y * v.y + z * v.z ;
+	}
+
+	float length2() const { return x * x + y * y + z * z; }
+	float length() const { return sqrtf(length2()); }
+	float dist2(const V3& v) { return (*this - v).length2(); }
+	float dist(const V3& v) { return (*this - v).length(); }
+
+	V3 normalize()
+	{
+		float l = length();
+		if (l != 0)
+			return{ x / l,y / l,z / l};
+		return { 0.0f,0.0f,0.0f };
+	}
+
+	V3 operator * (float v) const { return { x * v, y * v, z * v }; }
+	friend V3 operator * (float v, const V3& vec) { return vec * v; }
+	V3 operator / (float v) const { return { x / v, y / v, z / v }; }
+	V3 operator + (const V3& v) const { return { x + v.x, y + v.y, z + v.z}; }
+	V3 operator - (const V3& v) const { return { x - v.x, y - v.y, z - v.z}; }
+	V3 operator += (const V3& v) { x += v.x; y += v.y; z += v.z; return *this; }
+	V3 operator -= (const V3& v) { x -= v.x; y -= v.y; z -= v.z; return *this; }
+	bool operator == (const V3& v) const { return x == v.x && y == v.y && z == v.z; }
+	V3 operator / (const V3& v) const { return { x / v.x, y / v.y, z / v.z}; }
+
+	float x;
+	float y;
+	float z;
+};
+
+struct V2
+{
+	V2() = default;
+	V2(float x_, float y_)
+		:x(x_), y(y_){
+	}
+
+	static V2 zero() { return V2{ 0.0f, 0.0f}; }
+
+	float& operator[] (int index)
+	{
+		if (index == 0) return x;
+		if (index == 1) return y;
+		throw std::runtime_error("Wrong index");
+	}
+
+	const float& operator[] (int index) const
+	{
+		if (index == 0) return x;
+		if (index == 1) return y;
+		throw std::runtime_error("Wrong index");
+	}
+
+
+	float dot(const V2& v) const
+	{
+		return x * v.x + y * v.y;
+	}
+
+	float length2() const { return x * x + y * y; }
+	float length() const { return sqrtf(length2()); }
+	float dist2(const V2& v) { return (*this - v).length2(); }
+	float dist(const V2& v) { return (*this - v).length(); }
+
+	V2 normalize()
+	{
+		float l = length();
+		if (l != 0)
+			return{ x / l,y / l};
+		return { 0.0f,0.0f};
+	}
+
+	V2 operator * (float v) const { return { x * v, y * v}; }
+	friend V2 operator * (float v, const V2& vec) { return vec * v; }
+	V2 operator / (float v) const { return { x / v, y / v }; }
+	V2 operator + (const V2& v) const { return { x + v.x, y + v.y }; }
+	V2 operator - (const V2& v) const { return { x - v.x, y - v.y }; }
+	V2 operator += (const V2& v) { x += v.x; y += v.y;  return *this; }
+	V2 operator -= (const V2& v) { x -= v.x; y -= v.y;  return *this; }
+	bool operator == (const V2& v) const { return x == v.x && y == v.y; }
+	V2 operator / (const V2& v) const { return { x / v.x, y / v.y }; }
+
+	float x;
+	float y;
+};
+
 struct Mtx
 {
 	Mtx() = default;

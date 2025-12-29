@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "Animation/Mesh.h"
 
 #include <vulkan/vulkan.h>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -16,8 +17,13 @@ struct Vertex
 	glm::vec3 pos;
 	glm::vec3 color;
 	glm::vec2 texCoord;
-	glm::vec3 normal;
-	glm::vec3 tangent = glm::vec3(0.0f);
+	glm::vec3 normal;	
+	glm::vec3 tangent = glm::vec4(0.0f);
+	
+
+	glm::vec4 weightIndices = glm::vec4(0.0f);
+	glm::vec4 weights = glm::vec4(0.0f);
+
 
 	static VkVertexInputBindingDescription getBindingDescription()
 	{
@@ -33,8 +39,8 @@ struct Vertex
 	{
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-		VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT,  VK_FORMAT_R32G32B32_SFLOAT };
-		uint32_t offsets[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoord), offsetof(Vertex, normal), offsetof(Vertex, tangent) };
+		VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT,  VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT };
+		uint32_t offsets[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoord), offsetof(Vertex, normal), offsetof(Vertex, tangent),offsetof(Vertex, weightIndices), offsetof(Vertex, weights)};
 
 		for (int i = 0; i < numAttributes; ++i)
 		{
@@ -51,7 +57,7 @@ struct Vertex
 
 	bool operator==(const Vertex& other) const
 	{
-		return pos == other.pos && color == other.color && texCoord == other.texCoord && normal == other.normal && tangent == other.tangent;
+		return pos == other.pos && color == other.color && texCoord == other.texCoord && normal == other.normal && tangent == other.tangent && weightIndices == other.weightIndices && weights == other.weights;
 	}
 };
 
@@ -75,14 +81,25 @@ public:
 
 	bool load(Renderer* renderer, std::string_view filename);
 	void unload();
+	
+	void setMesh(Renderer* renderer_, Mesh* mesh);
 
 	VkBuffer getVertexBuffer() const { return vertexBuffer; }
 	VkBuffer getIndexBuffer() const { return indexBuffer; }
-	uint32_t getNumIndices() const { return (uint32_t)indices.size(); }
+	uint32_t getNumIndices() const 
+	{
+		if (mesh)
+		{
+			return (uint32_t)mesh->indices.size();
+		}
+		return (uint32_t)indices.size(); 
+	}
 
 	void generatePlane(Renderer* renderer, float size = 1.0f);
 	void generateCube(Renderer* renderer, float size = 1.0f);
 	void generateSphere(Renderer* renderer, float radius = 1.0f, int segments = 16, int ring = 16);
+
+
 
 
 protected:
@@ -93,6 +110,9 @@ protected:
 	void createVertexBuffer();
 	void createIndexBuffer();
 
+	void createMeshVertexBuffer();
+	void createMeshIndexBuffer();
+
 	Renderer* renderer = nullptr;
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
@@ -102,5 +122,7 @@ protected:
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
 	bool isInitialized = false;
+
+	Mesh* mesh = nullptr;
 };
 
