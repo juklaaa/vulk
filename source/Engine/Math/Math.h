@@ -397,6 +397,11 @@ struct Quat
 		y = sinv.y;
 		z = sinv.z;
 	}
+	
+	explicit Quat(const V4& v)
+		: x(v.x), y(v.y), z(v.z), w(0.0f)
+	{
+	}
 
 	static Quat identity()
 	{
@@ -407,6 +412,33 @@ struct Quat
 		q.w = 1.0f;
 		return q;
 	}
+	
+	V4 rotate(const V4& v) const
+	{
+		return (inversed() * (*this * Quat(v))).toVec();
+	}
+	
+	Quat operator * (const Quat& q) const
+	{
+		return 
+		{
+			w * q.x + x * q.w - y * q.z + z * q.y,
+			w * q.y + x * q.z + y * q.w - z * q.x,
+			w * q.z - x * q.y + y * q.x + z * q.w,
+			w * q.w - x * q.x - y * q.y - z * q.z
+		};
+	}
+	
+	Quat inversed() const
+	{
+		return {-x, -y, -z, w};
+	}
+	
+	V4 toVec() const
+	{
+		return {x, y, z, 0.0f};
+	}
+	
 
 	float x;
 	float y;

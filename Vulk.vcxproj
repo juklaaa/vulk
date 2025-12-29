@@ -129,6 +129,9 @@
     <ClCompile Include="source\rendering\RendererImpl.cpp" />
     <ClCompile Include="source\rendering\Texture.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="shaders\shaderSkel.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

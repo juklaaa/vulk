@@ -32,6 +32,8 @@ public:
 		Skeleton skeleton;
 		skeleton.load("models/tree.iqm");
 		auto animations = SkelAnimation::load("models/tree.iqm");
+		for (auto& animation : animations)
+			animation.calculateWorldPos(skeleton);
 		auto meshes = Mesh::load("models/tree.iqm");
 
 		//floor

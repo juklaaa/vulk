@@ -1,4 +1,6 @@
 #include "SkelAnimation.h"
+
+#include "Skeleton.h"
 #include "Importers/Importer_IQM.h"
 #include "Engine/Log.h"
 
@@ -83,4 +85,24 @@ std::vector<SkelAnimation> SkelAnimation::load(std::string_view filename)
 	}
 	log(x, x, "Read animations");
 	return result;
+}
+
+void SkelAnimation::calculateWorldPos(const Skeleton& skeleton)
+{
+	for (auto& frame : frames)
+	{
+		skeleton.Visit([&frame](const Skeleton::Bone& skelBone, uint index, uint parentIndex)
+		{
+			auto& bone = frame.bones[index];
+			if (parentIndex != (uint)-1)
+			{
+				auto& parentBone = frame.bones[parentIndex];
+				
+				bone.position = parentBone.position + parentBone.rotation.rotate(bone.position);
+				bone.rotation = parentBone.rotation * bone.rotation;
+				//TODO: scale
+			}
+		});
+	}
+	log(x, x, "Baked animations");
 }
