@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "Engine/Scene.h"
 #include "VisualComponent.h"
+#include "Animation/SkelAnimation.h"
 
 const std::string TEXTURE_PATH = "textures/deafult_texture.jpg";
 const std::string NORMAL_MAP_PATH = "textures/deafult_normal.png";
@@ -29,6 +30,18 @@ struct UBO
 	float textured;
 };
 
+constexpr uint NUM_BONES = 1u;
+struct AnimUBO : UBO
+{
+	glm::vec3 initialPoseBonePositions[NUM_BONES];
+	glm::quat initialPoseBoneRotations[NUM_BONES];
+	glm::vec3 initialPoseBoneScales[NUM_BONES];
+	
+	glm::vec3 poseBonePositions[NUM_BONES];
+	glm::quat poseBoneRotations[NUM_BONES];
+	glm::vec3 poseBoneScales[NUM_BONES];
+};
+
 struct SceneDataForUniforms
 {
 	glm::mat4 model;
@@ -37,6 +50,9 @@ struct SceneDataForUniforms
 	glm::mat4 offscreenMVP;
 	glm::vec3 light;
 	const Material* material = nullptr;
+	
+	const SkelAnimation::Frame* frame = nullptr;
+	const SkelAnimation::Frame* initialFrame = nullptr;
 };
 
 template<typename UBO_Type>
@@ -48,37 +64,34 @@ struct Pipeline : public Renderer::PipelineBase
 	}
 };
 
-struct MainPipeline : public Pipeline<UBO>
+template<typename UBO_Type = UBO>
+struct MainPipeline : public Pipeline<UBO_Type>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
+	virtual void fillUBO(const void* sceneDataRaw, void* uboRaw)
 	{
-		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		for (int i = 0; i < numVisuals; i++)
+		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataRaw);
+		UBO_Type& ubo = *reinterpret_cast<UBO_Type*>(uboRaw);
+		
+		ubo.model = sceneData.model;
+		ubo.view = sceneData.view;
+		ubo.proj = sceneData.proj;
+		ubo.depthMVP = sceneData.offscreenMVP;
+		ubo.light = glm::vec4((sceneData.light), 0);
+
+		if (auto material = sceneData.material)
 		{
-			UBO ubo{};
-			ubo.model = sceneData[i].model;
-			ubo.view = sceneData[i].view;
-			ubo.proj = sceneData[i].proj;
-			ubo.depthMVP = sceneData[i].offscreenMVP;
-			ubo.light = glm::vec4((sceneData[i].light), 0);
-
-			if (auto material = sceneData[i].material)
-			{
-				ubo.modelColor = material->getColor();
-				ubo.modelLightReflection = material->getLightReflection();
-				ubo.textured = material->isTextured();
-			}
-			else
-			{
-				ubo.modelColor = glm::vec3(1.0f, 1.0f, 1.0f);
-				ubo.modelLightReflection = 0;
-				ubo.textured = 1;
-			}
-
-			memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, &ubo, sizeof(ubo));
+			ubo.modelColor = material->getColor();
+			ubo.modelLightReflection = material->getLightReflection();
+			ubo.textured = material->isTextured();
+		}
+		else
+		{
+			ubo.modelColor = glm::vec3(1.0f, 1.0f, 1.0f);
+			ubo.modelLightReflection = 0;
+			ubo.textured = 1;
 		}
 	}
-
+	
 	virtual void createDescriptorSetLayout() override
 	{
 		VkDescriptorSetLayoutBinding uboLayoutBinding{};
@@ -105,7 +118,8 @@ struct MainPipeline : public Pipeline<UBO>
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
-		if (vkCreateDescriptorSetLayout(getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+		VkDescriptorSetLayout& descSetLayout = Renderer::PipelineBase::descriptorSetLayout;
+		if (vkCreateDescriptorSetLayout(Renderer::PipelineBase::getDevice(), &layoutInfo, nullptr, &descSetLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
@@ -115,24 +129,25 @@ struct MainPipeline : public Pipeline<UBO>
 	{
 		std::array<VkDescriptorPoolSize, 4> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = maxNumVisuals * getNumFramesInFlight();
+		poolSizes[0].descriptorCount = maxNumVisuals * Renderer::PipelineBase::getNumFramesInFlight();
 
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = maxNumVisuals * getNumFramesInFlight();
+		poolSizes[1].descriptorCount = maxNumVisuals * Renderer::PipelineBase::getNumFramesInFlight();
 
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[2].descriptorCount = maxNumVisuals * getNumFramesInFlight();
+		poolSizes[2].descriptorCount = maxNumVisuals * Renderer::PipelineBase::getNumFramesInFlight();
 
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[3].descriptorCount = maxNumVisuals * getNumFramesInFlight();
+		poolSizes[3].descriptorCount = maxNumVisuals * Renderer::PipelineBase::getNumFramesInFlight();
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = poolSizes.size();
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = maxNumVisuals * getNumFramesInFlight();
+		poolInfo.maxSets = maxNumVisuals * Renderer::PipelineBase::getNumFramesInFlight();
 
-		if (vkCreateDescriptorPool(getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+		VkDescriptorPool& descPool = Renderer::PipelineBase::descriptorPool;
+		if (vkCreateDescriptorPool(Renderer::PipelineBase::getDevice(), &poolInfo, nullptr, &descPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
@@ -140,26 +155,26 @@ struct MainPipeline : public Pipeline<UBO>
 
 	virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) override
 	{
-		if (numVisuals_DescriptorSets[currentImage] == numVisuals)
+		if (Renderer::PipelineBase::numVisuals_DescriptorSets[currentImage] == numVisuals)
 			return;
 
-		auto& set = descriptorSets[currentImage];
+		auto& set = Renderer::PipelineBase::descriptorSets[currentImage];
 		if (!set.empty())
-			vkFreeDescriptorSets(getDevice(), descriptorPool, set.size(), set.data());
+			vkFreeDescriptorSets(Renderer::PipelineBase::getDevice(), Renderer::PipelineBase::descriptorPool, set.size(), set.data());
 
-		numVisuals_DescriptorSets[currentImage] = numVisuals;
+		Renderer::PipelineBase::numVisuals_DescriptorSets[currentImage] = numVisuals;
 
 		uint32_t numDescriptorSets = numVisuals;
 
-		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, descriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, Renderer::PipelineBase::descriptorSetLayout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorPool = Renderer::PipelineBase::descriptorPool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(numDescriptorSets);
 		allocInfo.pSetLayouts = layouts.data();
 
 		set.resize(numDescriptorSets);
-		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, set.data()) != VK_SUCCESS)
+		if (vkAllocateDescriptorSets(Renderer::PipelineBase::getDevice(), &allocInfo, set.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
@@ -167,44 +182,44 @@ struct MainPipeline : public Pipeline<UBO>
 		for (size_t i = 0; i < numDescriptorSets; i++)
 		{
 			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = uniformBuffers[currentImage][i];
+			bufferInfo.buffer = Renderer::PipelineBase::uniformBuffers[currentImage][i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = getUBOSize();
+			bufferInfo.range = Pipeline<UBO_Type>::getUBOSize();
 
 			auto actorMaterial = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getMaterial();
 
 			VkDescriptorImageInfo imageInfo{};	
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			if (actorMaterial == nullptr)
-				imageInfo.imageView = renderer->texture.getImageView();
+				imageInfo.imageView = Renderer::PipelineBase::renderer->texture.getImageView();
 			else
 			{
 				auto actorTexture = actorMaterial->getTexture();
 				if(actorTexture==nullptr)
-					imageInfo.imageView = renderer->texture.getImageView();
+					imageInfo.imageView = Renderer::PipelineBase::renderer->texture.getImageView();
 				else
 					imageInfo.imageView = actorTexture->getImageView();
 			}				
-			imageInfo.sampler = renderer->textureSampler;
+			imageInfo.sampler = Renderer::PipelineBase::renderer->textureSampler;
 
 			VkDescriptorImageInfo normalMapInfo{};	
 			normalMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			if (actorMaterial == nullptr)
-				normalMapInfo.imageView = renderer->normalMap.getImageView();
+				normalMapInfo.imageView = Renderer::PipelineBase::renderer->normalMap.getImageView();
 			else
 			{
 				auto actorNomal = actorMaterial->getNormalMap();
 				if (actorNomal == nullptr)
-					normalMapInfo.imageView = renderer->normalMap.getImageView();
+					normalMapInfo.imageView = Renderer::PipelineBase::renderer->normalMap.getImageView();
 				else
 					normalMapInfo.imageView = actorNomal->getImageView();
 			}
-			normalMapInfo.sampler = renderer->textureSampler;
+			normalMapInfo.sampler = Renderer::PipelineBase::renderer->textureSampler;
 
 			VkDescriptorImageInfo depthMapInfo{};
 			depthMapInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-			depthMapInfo.imageView = getImpl().shadowmapDepthImageView;
-			depthMapInfo.sampler = renderer->textureSampler;
+			depthMapInfo.imageView = Renderer::PipelineBase::getImpl().shadowmapDepthImageView;
+			depthMapInfo.sampler = Renderer::PipelineBase::renderer->textureSampler;
 
 			std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
@@ -240,22 +255,46 @@ struct MainPipeline : public Pipeline<UBO>
 			descriptorWrites[3].descriptorCount = 1;
 			descriptorWrites[3].pImageInfo = &depthMapInfo;
 
-			vkUpdateDescriptorSets(getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			vkUpdateDescriptorSets(Renderer::PipelineBase::getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
+	}
+};
+
+struct AnimPipeline : public MainPipeline<AnimUBO>
+{
+	virtual void fillUBO(const void* sceneDataRaw, void* uboRaw)
+	{
+		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataRaw);
+		AnimUBO& ubo = *reinterpret_cast<AnimUBO*>(uboRaw);
+		MainPipeline<AnimUBO>::fillUBO(&sceneData, &ubo);
+		FillPosePSR(ubo.initialPoseBonePositions, ubo.initialPoseBoneRotations, ubo.initialPoseBoneScales, sceneData.initialFrame);
+		FillPosePSR(ubo.poseBonePositions, ubo.poseBoneRotations, ubo.poseBoneScales, sceneData.initialFrame);
+	}
+	
+	void FillPosePSR(glm::vec3* positions, glm::quat* rotations, glm::vec3* scales, const SkelAnimation::Frame* frame)
+	{
+		if (!frame)
+			return;
+		
+		int i = 0;
+		for (auto& bone : frame->bones)
+		{
+			positions[i] = glm::vec3(bone.position.x, bone.position.y, bone.position.z);
+			rotations[i] = glm::quat(bone.rotation.x, bone.rotation.y, bone.rotation.z, bone.rotation.w);
+			scales[i] = glm::vec3(bone.size.x, bone.size.y, bone.size.z);
+			++i;
+			assert(i < NUM_BONES);
+		}	
 	}
 };
 
 struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 {
-	virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) override
+	virtual void fillUBO(const void* sceneDataRaw, void* uboRaw) override
 	{
-		const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
-		for (int i = 0; i < numVisuals; i++)
-		{
-			OffscreenUBO ubo;
-			ubo.MVP = sceneData[i].offscreenMVP;
-			memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, &ubo, sizeof(ubo));
-		}
+		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataRaw);
+		OffscreenUBO& ubo = *reinterpret_cast<OffscreenUBO*>(uboRaw);
+		ubo.MVP = sceneData.offscreenMVP;
 	}
 
 	virtual void createDescriptorSetLayout() override
@@ -352,8 +391,10 @@ void Renderer::init(GLFWwindow* window)
 	texture.load(this, TEXTURE_PATH.c_str());
 	normalMap.load(this, NORMAL_MAP_PATH.c_str(), VK_FORMAT_R8G8B8A8_UNORM);
 
-	pipeline = std::make_unique<MainPipeline>();
-	pipeline->init(this, "nmap", impl.renderPass, impl.msaaSamples, 5);
+	pipeline = std::make_unique<MainPipeline<>>();
+	pipeline->init(this, "nmap", impl.renderPass, impl.msaaSamples, 7);
+	animPipeline = std::make_unique<AnimPipeline>();
+	animPipeline->init(this, "anim", "nmap", impl.renderPass, impl.msaaSamples, 7);
 	offscreenPipeline = std::make_unique<OffscreenPipeline>();
 	offscreenPipeline->init(this, "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 1);
 }
@@ -363,6 +404,7 @@ void Renderer::deinit()
 	vkDestroySampler(getDevice(), textureSampler, nullptr);
 
 	pipeline->deinit();
+	animPipeline->deinit();
 	offscreenPipeline->deinit();
 
 	texture.unload();
@@ -442,6 +484,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		sceneDataForUniforms.light = light;
 		sceneDataForUniforms.offscreenMVP = offscreenMVP;
 		sceneDataForUniforms.material = visual->getMaterial();
+		// TODO: pass the animation frame data
 		sceneDatas.push_back(sceneDataForUniforms);
 	}
 
@@ -449,6 +492,10 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 	pipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
 	pipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 
+	animPipeline->createUniformBuffers(visualComponents.size(), currentImage);
+	animPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
+	animPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
+	
 	offscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
 	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
 	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
@@ -490,7 +537,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = impl.shadowmapRenderPass;
-		renderPassInfo.framebuffer = impl.shadowmapFramebuffer;//to sie gdzieœ usuwa i nie jest odbudowane
+		renderPassInfo.framebuffer = impl.shadowmapFramebuffer;//to sie gdzieï¿½ usuwa i nie jest odbudowane
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = { RendererImpl::shadowmapSize, RendererImpl::shadowmapSize };
 
@@ -594,7 +641,62 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 
 		vkCmdEndRenderPass(commandBuffer);
 	}
+	
+	{
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = impl.renderPass;
+		renderPassInfo.framebuffer = impl.swapChainFramebuffers[swapchainImageIndex];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = impl.swapChainExtent;
 
+		std::array<VkClearValue, 2> clearValues{};
+		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animPipeline->graphicsPipeline);
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(impl.swapChainExtent.width);
+		viewport.height = static_cast<float>(impl.swapChainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = impl.swapChainExtent;
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		for (int i = 0; i < visualComponents.size(); ++i)
+		{
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animPipeline->pipelineLayout, 0, 1, &animPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
+
+			auto vis = visualComponents[i];
+
+			PushConstants constants;
+			constants.isPPLightingEnabled = isPPLightingEnabled;
+			vkCmdPushConstants(commandBuffer, animPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+
+			VkBuffer vertexBuffers[] = { vis->getModel()->getVertexBuffer()};
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+			vkCmdBindIndexBuffer(commandBuffer, vis->getModel()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdDrawIndexed(commandBuffer, vis->getModel()->getNumIndices(), 1, 0, 0, 0);
+		}
+
+		vkCmdEndRenderPass(commandBuffer);
+	}
+	
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to record command buffer!");
@@ -604,6 +706,11 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 //==========================Pipeline=========================================//
 
 void Renderer::PipelineBase::init(Renderer* renderer_, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
+{
+	init(renderer_, shaderPath, shaderPath, renderPass, msaaSamples, numVertAttributes);
+}
+
+void Renderer::PipelineBase::init(Renderer* renderer_, std::string_view vertShaderPath, std::string_view fragShaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
 	renderer = renderer_;
 
@@ -626,7 +733,7 @@ void Renderer::PipelineBase::init(Renderer* renderer_, std::string_view shaderPa
 	vkDestroyBuffer(getDevice(), sampleBuffer, nullptr);
 
 	createDescriptorSetLayout();
-	createGraphicsPipeline(shaderPath, renderPass, msaaSamples, numVertAttributes);
+	createGraphicsPipeline(vertShaderPath, fragShaderPath, renderPass, msaaSamples, numVertAttributes);
 	constexpr int maxNumVisuals = 100;
 	allocateUniformBuffersMemory(maxNumVisuals);
 	createDescriptorPool(maxNumVisuals);
@@ -651,8 +758,13 @@ void Renderer::PipelineBase::deinit()
 
 void Renderer::PipelineBase::createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
 {
-	auto vertShaderCode = readFile(std::format("shaders/{}_v.spv", shaderPath));
-	auto fragShaderCode = readFile(std::format("shaders/{}_f.spv", shaderPath));
+	createGraphicsPipeline(shaderPath, shaderPath, renderPass, msaaSamples, numVertAttributes);
+}
+
+void Renderer::PipelineBase::createGraphicsPipeline(std::string_view vertShaderPath, std::string_view fragShaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes)
+{
+	auto vertShaderCode = readFile(std::format("shaders/{}_v.spv", vertShaderPath));
+	auto fragShaderCode = readFile(std::format("shaders/{}_f.spv", fragShaderPath));
 
 	VkShaderModule vertShaderModule = getImpl().createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = getImpl().createShaderModule(fragShaderCode);
@@ -850,6 +962,19 @@ void Renderer::PipelineBase::createUniformBuffers(int numVisuals, int frameIndex
 
 		vkBindBufferMemory(getDevice(), uniforms[i], uniformBuffersMemory[frameIndex], i * uniformMemReq.size);
 	}
+}
+
+void Renderer::PipelineBase::updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals)
+{
+	const SceneDataForUniforms* sceneData = reinterpret_cast<const SceneDataForUniforms*>(sceneDataForUniforms);
+	char* uboMemory = new char[getUBOSize()];
+	for (int i = 0; i < numVisuals; i++)
+	{
+		memset(uboMemory, 0, getUBOSize());
+		fillUBO(&sceneData[i], uboMemory);
+		memcpy(reinterpret_cast<char*>(uniformBuffersMapped[currentImage]) + uniformMemReq.size * i, uboMemory, getUBOSize());
+	}
+	delete[] uboMemory;
 }
 
 //===========================MISC======================================/

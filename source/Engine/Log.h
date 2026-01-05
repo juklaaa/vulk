@@ -4,22 +4,24 @@
 #include <format>
 #include <string>
 
+enum LogSeverity { Error, Warning, Info, Verbose };
+
 struct Logger
 {
 	static Logger& getSingleton();
 
 	void init();
-	void writeString(std::string_view str);
+	void writeString(LogSeverity severity, std::string_view str);
 
 	template <typename... Types>
-	void writeLog(const char* filename, int lineNumber, const std::format_string<Types...> fmt, Types&&... args)
+	void writeLog(LogSeverity severity, const char* filename, int lineNumber, const std::format_string<Types...> fmt, Types&&... args)
 	{
 		std::string line = std::format("{}({},1): {}", filename, lineNumber, std::format(fmt, args...));
-		writeString(line);
+		writeString(severity, line);
 	}
 
 	std::ofstream file;
 };
 
 #define log(cat, severity, ...) \
-Logger::getSingleton().writeLog(__FILE__, __LINE__, __VA_ARGS__);
+Logger::getSingleton().writeLog(severity, __FILE__, __LINE__, __VA_ARGS__);

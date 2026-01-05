@@ -13,9 +13,15 @@ void Logger::init()
 	file.open("log.txt");
 }
 
-void Logger::writeString(std::string_view str)
+void Logger::writeString(LogSeverity severity, std::string_view str)
 {
-	std::cout << str << std::endl;
+	if (severity == LogSeverity::Error ||
+		severity == LogSeverity::Warning)
+	{
+		std::cerr << str << std::endl;
+	}
+	else
+		std::cout << str << std::endl;
 	OutputDebugStringA(str.data());
 	OutputDebugStringA("\n");
 	file << str << std::endl;

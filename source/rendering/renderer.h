@@ -36,9 +36,11 @@ public:
 		virtual ~PipelineBase() = default;
 
 		void init(Renderer* renderer, std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
+		void init(Renderer* renderer, std::string_view vertShaderPath, std::string_view fragShaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 		void deinit();
 
 		virtual void createDescriptorSetLayout() = 0;
+		void createGraphicsPipeline(std::string_view vertShaderPath, std::string_view fragShaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 		void createGraphicsPipeline(std::string_view shaderPath, VkRenderPass renderPass, VkSampleCountFlagBits msaaSamples, int numVertAttributes);
 
 		void allocateUniformBuffersMemory(int maxNumVisuals);
@@ -47,7 +49,8 @@ public:
 		virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) = 0;
 
 		virtual size_t getUBOSize() const = 0;
-		virtual void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals) = 0;
+		void updateUniformBuffer(uint32_t currentImage, const void* sceneDataForUniforms, int numVisuals);
+		virtual void fillUBO(const void* sceneData, void* ubo) = 0;
 
 		RendererImpl& getImpl() { return renderer->impl; }
 		VkDevice getDevice() { return renderer->impl.device; }
@@ -83,6 +86,7 @@ private:
 	RendererImpl impl;
 
 	std::unique_ptr<PipelineBase> pipeline;
+	std::unique_ptr<PipelineBase> animPipeline;
 	std::unique_ptr<PipelineBase> offscreenPipeline;
 	
 	uint32_t mipLevels;
