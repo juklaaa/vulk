@@ -10,7 +10,12 @@ class Mesh
 {
 public:
 
-	static std::vector<Mesh> load(std::string_view filepath);
+	static std::vector<Mesh> loadiqm(std::string_view filepath);
+	static std::vector<Mesh> loadobj(std::string_view filepath);
+
+	void generatePlane(float size = 1.0f);
+	void generateCube(float size = 1.0f);
+	void generateSphere(float radius = 1.0f, int segments = 16, int ring = 16);
 
 	struct Vertex
 	{
@@ -26,6 +31,8 @@ public:
 
 protected:
 	friend class Model;
+
+	void computeTangents();
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;

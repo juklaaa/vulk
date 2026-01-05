@@ -6,6 +6,7 @@
 #include <numbers>
 constexpr float PI = std::numbers::pi_v<float>;
 
+
 struct V4
 {
 	V4() = default;

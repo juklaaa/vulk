@@ -34,13 +34,16 @@ public:
 		auto animations = SkelAnimation::load("models/tree.iqm");
 		for (auto& animation : animations)
 			animation.calculateWorldPos(skeleton);
-		auto meshes = Mesh::load("models/tree.iqm");
+		auto meshes = Mesh::loadiqm("models/tree.iqm");
+		//auto meshes = Mesh::loadObj("models/stanford_bunny.obj");
 
 		//floor
 		Material floorMaterial;
 		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
 		Model floorModel;
-		floorModel.generatePlane(&renderer,8);
+		Mesh planeMesh;
+		planeMesh.generatePlane(8);
+		floorModel.setMesh(&renderer,&planeMesh);
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
@@ -68,7 +71,9 @@ public:
 		
 		//spheres		
 		Model sphererModel;
-		sphererModel.generateSphere(&renderer, 0.5f, 16, 16);
+		Mesh sphereMesh;
+		sphereMesh.generateSphere(0.5f, 16, 16);
+		sphererModel.setMesh(&renderer, &sphereMesh);
 
 		const int numSpheres = 3;
 		std::vector<Actor*> spheres;
@@ -90,9 +95,7 @@ public:
 			actor->getComponent<PhysicsComponent>()->setMass(i + numSpheres);
 			actor->getComponent<PhysicsComponent>()->setRestitution(0.99f);
 			spheres.push_back(actor);
-		}
-
-		
+		}		
 
 		mainLoop();
 
@@ -175,7 +178,7 @@ private:
 
 int main()
 {
-	Application app;
+	Application app;	
 
 	try
 	{

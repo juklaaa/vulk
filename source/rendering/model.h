@@ -77,7 +77,6 @@ public:
 	Model() = default;
 	~Model();
 
-	bool load(Renderer* renderer, std::string_view filename);
 	void unload();
 	
 	void setMesh(Renderer* renderer_, Mesh* mesh);
@@ -90,37 +89,26 @@ public:
 		{
 			return (uint32_t)mesh->indices.size();
 		}
-		return (uint32_t)indices.size(); 
+		return 0; 
 	}
-
-	void generatePlane(Renderer* renderer, float size = 1.0f);
-	void generateCube(Renderer* renderer, float size = 1.0f);
-	void generateSphere(Renderer* renderer, float radius = 1.0f, int segments = 16, int ring = 16);
-
-
 
 
 protected:
 
 	VkDevice getDevice() const;
 
-	void computeTangents();
 	void createVertexBuffer();
 	void createIndexBuffer();
 
-	void createMeshVertexBuffer();
-	void createMeshIndexBuffer();
-
 	Renderer* renderer = nullptr;
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
 
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
+
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
-	bool isInitialized = false;
 
+	bool isInitialized = false;
 	Mesh* mesh = nullptr;
 };
 
