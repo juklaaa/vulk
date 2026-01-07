@@ -67,6 +67,7 @@ public:
 		tableActor->addComponent<BoxColliderComponent>();
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
+		tableActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
 		tableActor->getTransformComponent().setTransform(Mtx::scale({ 1.0f, 1.0f, 0.25f }) * Mtx::translate({ 0.0f, 0.0f, -1.0f }) /* Mtx::rotate({ 0.0f, PI / 4, 0.0f })*/);
 		
 		//spheres		

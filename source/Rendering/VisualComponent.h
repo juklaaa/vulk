@@ -10,6 +10,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+#include "Animation/SkelAnimation.h"
+
 class Material
 {
 public:
@@ -37,7 +39,6 @@ private:
 	bool textured = false;
 };
 
-
 class VisualComponent : public Component
 {
 public:
@@ -47,12 +48,20 @@ public:
 
 	const Material* getMaterial() const { return material; }
 	void setMaterial(const Material* material_) { material = material_; }
-
-protected:
+	
+	void playAnimation(const SkelAnimation* animation, const SkelAnimation::Frame* initialFrame);
+	void stopAnimation();
+	const SkelAnimation::Frame* getAnimationFrame() const;
+	const SkelAnimation::Frame* getInitialAnimationFrame() const { return initialFrame; }
+	
+	virtual void tick(float dt) override;
 
 private:
 	const Model* model = nullptr;
 	const Material* material = nullptr;
-	
+	const Skeleton* skeleton = nullptr;
+	const SkelAnimation* animation = nullptr;
+	const SkelAnimation::Frame* initialFrame = nullptr;
+	float time = 0.0f;
+	bool isAnimationPlaying = false;
 };
-

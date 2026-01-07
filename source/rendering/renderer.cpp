@@ -2,6 +2,7 @@
 #include "Engine/Scene.h"
 #include "VisualComponent.h"
 #include "Animation/SkelAnimation.h"
+#include "Engine/Log.h"
 
 const std::string TEXTURE_PATH = "textures/deafult_texture.jpg";
 const std::string NORMAL_MAP_PATH = "textures/deafult_normal.png";
@@ -30,7 +31,7 @@ struct UBO
 	float textured;
 };
 
-constexpr uint NUM_BONES = 1u;
+constexpr uint NUM_BONES = 32u;
 struct AnimUBO : UBO
 {
 	glm::vec3 initialPoseBonePositions[NUM_BONES];
@@ -268,7 +269,7 @@ struct AnimPipeline : public MainPipeline<AnimUBO>
 		AnimUBO& ubo = *reinterpret_cast<AnimUBO*>(uboRaw);
 		MainPipeline<AnimUBO>::fillUBO(&sceneData, &ubo);
 		FillPosePSR(ubo.initialPoseBonePositions, ubo.initialPoseBoneRotations, ubo.initialPoseBoneScales, sceneData.initialFrame);
-		FillPosePSR(ubo.poseBonePositions, ubo.poseBoneRotations, ubo.poseBoneScales, sceneData.initialFrame);
+		FillPosePSR(ubo.poseBonePositions, ubo.poseBoneRotations, ubo.poseBoneScales, sceneData.frame);
 	}
 	
 	void FillPosePSR(glm::vec3* positions, glm::quat* rotations, glm::vec3* scales, const SkelAnimation::Frame* frame)
@@ -484,7 +485,8 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		sceneDataForUniforms.light = light;
 		sceneDataForUniforms.offscreenMVP = offscreenMVP;
 		sceneDataForUniforms.material = visual->getMaterial();
-		// TODO: pass the animation frame data
+		sceneDataForUniforms.frame = visual->getAnimationFrame();
+		sceneDataForUniforms.initialFrame = visual->getInitialAnimationFrame();
 		sceneDatas.push_back(sceneDataForUniforms);
 	}
 
@@ -604,7 +606,6 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->graphicsPipeline);
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -622,69 +623,25 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 
 		for (int i = 0; i < visualComponents.size(); ++i)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
 
 			auto vis = visualComponents[i];
-
-			PushConstants constants;
-			constants.isPPLightingEnabled = isPPLightingEnabled;
-			vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
-
-			VkBuffer vertexBuffers[] = { vis->getModel()->getVertexBuffer()};
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-			vkCmdBindIndexBuffer(commandBuffer, vis->getModel()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-			vkCmdDrawIndexed(commandBuffer, vis->getModel()->getNumIndices(), 1, 0, 0, 0);
-		}
-
-		vkCmdEndRenderPass(commandBuffer);
-	}
-	
-	{
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = impl.renderPass;
-		renderPassInfo.framebuffer = impl.swapChainFramebuffers[swapchainImageIndex];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = impl.swapChainExtent;
-
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-		clearValues[1].depthStencil = { 1.0f, 0 };
-
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
-
-		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animPipeline->graphicsPipeline);
-
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(impl.swapChainExtent.width);
-		viewport.height = static_cast<float>(impl.swapChainExtent.height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = impl.swapChainExtent;
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-		for (int i = 0; i < visualComponents.size(); ++i)
-		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animPipeline->pipelineLayout, 0, 1, &animPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
-
-			auto vis = visualComponents[i];
-
-			PushConstants constants;
-			constants.isPPLightingEnabled = isPPLightingEnabled;
-			vkCmdPushConstants(commandBuffer, animPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
-
+			if (!vis->getInitialAnimationFrame())
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->graphicsPipeline);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout, 0, 1, &pipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
+				PushConstants constants;
+				constants.isPPLightingEnabled = isPPLightingEnabled;
+				vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+			}
+			else
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animPipeline->graphicsPipeline);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animPipeline->pipelineLayout, 0, 1, &animPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
+				PushConstants constants;
+				constants.isPPLightingEnabled = isPPLightingEnabled;
+				vkCmdPushConstants(commandBuffer, animPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+			}
+			
 			VkBuffer vertexBuffers[] = { vis->getModel()->getVertexBuffer()};
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);

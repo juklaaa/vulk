@@ -49,8 +49,17 @@ void main()
     fragTexCoord = inTexCoord;
 
     fragColor = ubo.modelColor;
+    
+    uvec4 boneIndices = uvec4(inBoneIndices & 0xff000000, inBoneIndices & 0xff0000, inBoneIndices & 0xff00, inBoneIndices & 0xff);
+    vec3 radiusesToBone[4];
+    for (int i = 0; i < 4; ++i)
+        radiusesToBone[i] = inPosition - ubo.initialBonePos[boneIndices[i]];
 
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
+    vec3 posFromBones = vec3(0.0f);
+    for (int i = 0; i < 4; ++i)
+        posFromBones += inBoneWeights[i] * (ubo.bonePos[i] + radiusesToBone[i]);
+    
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(posFromBones, 1.0f);
     fragLightCamPosition = biasMat * ubo.depthMVP * vec4(inPosition, 1.0f);
 
     vec3 Positon = (ubo.model * vec4(inPosition, 1.0f)).xyz;

@@ -48,6 +48,9 @@ void SkelAnimation::load(std::string_view filename, Animations& animations)
 			f.read(reinterpret_cast<char*>(&anim), sizeof(anim));
 			
 			SkelAnimation skelAnim;
+			skelAnim.name = anim.name;
+			skelAnim.framerate = anim.framerate;
+			
 			f.seekg(header.ofs_frames/* + anim.first_frame * frame_size */);
 			for (int j = 0; j < anim.num_frames; ++j)
 			{

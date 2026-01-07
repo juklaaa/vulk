@@ -4,7 +4,7 @@
 #include <format>
 #include <string>
 
-enum LogSeverity { Error, Warning, Info, Verbose };
+enum LogSeverity { Error, Warning, Log, Verbose };
 
 struct Logger
 {

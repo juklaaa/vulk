@@ -673,14 +673,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RendererImpl::debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
-	LogSeverity severity = LogSeverity::Info;
+	LogSeverity severity = LogSeverity::Log;
 	if (pCallbackData->flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		severity = LogSeverity::Warning;
 	if (pCallbackData->flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		severity = LogSeverity::Error;
 	
 	log(Vulkan, severity, "{}", pCallbackData->pMessage);
-	std::cout << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 	int size = strnlen(pCallbackData->pMessage, 2048);
 	size += 1;
