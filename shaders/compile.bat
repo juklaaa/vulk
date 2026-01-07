@@ -4,4 +4,6 @@ glslc.exe shader.frag -o nmap_f.spv
 glslc.exe offscreenshader.vert -o offscreen_v.spv
 glslc.exe offscreenshader.frag -o offscreen_f.spv
 
+glslc.exe shaderSkel.vert -o anim_v.spv
+
 pause

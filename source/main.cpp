@@ -31,9 +31,9 @@ public:
 
 		Skeleton skeleton;
 		skeleton.load("models/tree.iqm");
-		auto animations = SkelAnimation::load("models/tree.iqm");
-		for (auto& animation : animations)
-			animation.calculateWorldPos(skeleton);
+		Animations animations;
+		SkelAnimation::load("models/tree.iqm", animations);
+		animations.convertToRootSpace(skeleton);
 		auto meshes = Mesh::loadiqm("models/tree.iqm");
 		//auto meshes = Mesh::loadObj("models/stanford_bunny.obj");
 

@@ -7,6 +7,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include "Engine/Log.h"
 #include <stdlib.h>
 
 const std::vector<const char*> validationLayers =
@@ -672,7 +673,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RendererImpl::debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
-	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+	LogSeverity severity = LogSeverity::Info;
+	if (pCallbackData->flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		severity = LogSeverity::Warning;
+	if (pCallbackData->flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		severity = LogSeverity::Error;
+	
+	log(Vulkan, severity, "{}", pCallbackData->pMessage);
+	std::cout << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 	int size = strnlen(pCallbackData->pMessage, 2048);
 	size += 1;

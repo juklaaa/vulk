@@ -4,12 +4,12 @@
 #include "Importers/Importer_IQM.h"
 #include "Engine/Log.h"
 
-std::vector<SkelAnimation> SkelAnimation::load(std::string_view filename)
+void SkelAnimation::load(std::string_view filename, Animations& animations)
 {
-	std::vector<SkelAnimation> result;
+	std::vector<SkelAnimation>& result = animations.animations;
 	std::ifstream f(filename.data(), std::ios_base::binary);
 	if (!f)
-		return result;
+		return;
 
 	iqmheader header;
 	f.read(reinterpret_cast<char*>(&header), sizeof(header));
@@ -83,26 +83,50 @@ std::vector<SkelAnimation> SkelAnimation::load(std::string_view filename)
 			result.push_back(std::move(skelAnim));
 		}
 	}
-	log(x, x, "Read animations");
-	return result;
+	
+	if (header.num_joints > 0 && header.ofs_joints > 0)
+	{
+		f.seekg(header.ofs_joints);
+		for (uint i = 0; i < header.num_joints; ++i)
+		{
+			iqmjoint joint;
+			f.read(reinterpret_cast<char*>(&joint), sizeof(joint));
+			animations.initialFrame.bones.emplace_back
+			(
+				V4{joint.translate[0],joint.translate[1],joint.translate[2]},
+				Quat{joint.rotate[0],joint.rotate[1],joint.rotate[2], joint.rotate[3]},
+				V4{joint.scale[0],joint.scale[1],joint.scale[2]}
+			);
+		}
+	}
 }
 
-void SkelAnimation::calculateWorldPos(const Skeleton& skeleton)
+
+void SkelAnimation::convertToRootSpace(const Skeleton& skeleton)
 {
 	for (auto& frame : frames)
+		frame.convertToRootSpace(skeleton);
+}
+		
+void SkelAnimation::Frame::convertToRootSpace(const Skeleton& skeleton)
+{
+	skeleton.Visit([this](const Skeleton::Bone& skelBone, uint index, uint parentIndex)
 	{
-		skeleton.Visit([&frame](const Skeleton::Bone& skelBone, uint index, uint parentIndex)
+		auto& bone = bones[index];
+		if (parentIndex != (uint)-1)
 		{
-			auto& bone = frame.bones[index];
-			if (parentIndex != (uint)-1)
-			{
-				auto& parentBone = frame.bones[parentIndex];
-				
-				bone.position = parentBone.position + parentBone.rotation.rotate(bone.position);
-				bone.rotation = parentBone.rotation * bone.rotation;
-				//TODO: scale
-			}
-		});
-	}
-	log(x, x, "Baked animations");
+			auto& parentBone = bones[parentIndex];
+			
+			bone.position = parentBone.position + parentBone.rotation.rotate(bone.position);
+			bone.rotation = parentBone.rotation * bone.rotation;
+			//TODO: scale
+		}
+	});
+}
+
+void Animations::convertToRootSpace(const Skeleton& skeleton)
+{
+	for (auto& animation : animations)
+		animation.convertToRootSpace(skeleton);
+	initialFrame.convertToRootSpace(skeleton);
 }

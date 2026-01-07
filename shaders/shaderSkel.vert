@@ -1,5 +1,6 @@
 #version 450
 
+const int NUM_BONES = 32;
 layout(binding = 0) uniform UniformBufferObject 
 {
     mat4 model;
@@ -10,6 +11,14 @@ layout(binding = 0) uniform UniformBufferObject
 	vec3 modelColor;
 	float modelLightReflection;
 	float textured;
+    
+    vec3 initialBonePos[NUM_BONES];
+    vec4 initialBoneRot[NUM_BONES];
+    vec3 initialBoneScale[NUM_BONES];
+    
+    vec3 bonePos[NUM_BONES];
+    vec4 boneRot[NUM_BONES];
+    vec3 boneScale[NUM_BONES];
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
