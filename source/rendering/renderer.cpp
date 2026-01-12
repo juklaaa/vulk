@@ -393,7 +393,7 @@ void Renderer::init(GLFWwindow* window)
 	normalMap.load(this, NORMAL_MAP_PATH.c_str(), VK_FORMAT_R8G8B8A8_UNORM);
 
 	pipeline = std::make_unique<MainPipeline<>>();
-	pipeline->init(this, "nmap", impl.renderPass, impl.msaaSamples, 7);
+	pipeline->init(this, "nmap", impl.renderPass, impl.msaaSamples, 5);
 	animPipeline = std::make_unique<AnimPipeline>();
 	animPipeline->init(this, "anim", "nmap", impl.renderPass, impl.msaaSamples, 7);
 	offscreenPipeline = std::make_unique<OffscreenPipeline>();
@@ -539,7 +539,7 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = impl.shadowmapRenderPass;
-		renderPassInfo.framebuffer = impl.shadowmapFramebuffer;//to sie gdzie� usuwa i nie jest odbudowane
+		renderPassInfo.framebuffer = impl.shadowmapFramebuffer;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = { RendererImpl::shadowmapSize, RendererImpl::shadowmapSize };
 
@@ -623,7 +623,6 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 
 		for (int i = 0; i < visualComponents.size(); ++i)
 		{
-
 			auto vis = visualComponents[i];
 			if (!vis->getInitialAnimationFrame())
 			{
