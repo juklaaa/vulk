@@ -29,13 +29,15 @@ public:
 		initWindow();
 		renderer.init(window);
 
+
+		std::string meshPath = "models/tree.iqm";
+		meshPath = "models/test1.iqm";
 		Skeleton skeleton;
-		skeleton.load("models/tree.iqm");
+		skeleton.load(meshPath);
 		Animations animations;
-		SkelAnimation::load("models/tree.iqm", animations);
+		SkelAnimation::load(meshPath, animations);
 		animations.convertToRootSpace(skeleton);
-		auto meshes = Mesh::loadiqm("models/tree.iqm");
-		//auto meshes = Mesh::loadObj("models/stanford_bunny.obj");
+		auto meshes = Mesh::loadiqm(meshPath);
 
 		//floor
 		Material floorMaterial;
@@ -68,40 +70,11 @@ public:
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
 		tableActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
-		tableActor->getTransformComponent().setTransform( Mtx::scale({ 0.5f, 0.5f, 0.5f }) * Mtx::translate({ 0.0f, 0.0f, -1.0f }) );
+		tableActor->getTransformComponent().setTransform(Mtx::scale({0.5f, 0.5f, 0.5f}) * Mtx::translate({0.0f, 0.0f, 0.0f}));
 		
-		//spheres		
-		Model sphererModel;
-		Mesh sphereMesh;
-		sphereMesh.generateSphere(0.5f, 16, 16);
-		sphererModel.setMesh(&renderer, &sphereMesh);
-
-		const int numSpheres = 3;
-		std::vector<Actor*> spheres;
-		Material spheresMatirials[numSpheres];
-		for (int i = 0; i < numSpheres; i++)
-		{
-			Material material;
-			float c = (i+1.0f) / numSpheres;
-			material.setColor(c, 0.0f, c);
-			int j = i;
-			spheresMatirials[j] = material;
-
-			auto actor = scene.addActor();
-			actor->addComponent<VisualComponent>()->setModel(&sphererModel);
-			actor->getComponent<VisualComponent>()->setMaterial(&spheresMatirials[j]);
-			actor->getTransformComponent().setTransform(Mtx::translate({ i * 1.1f - numSpheres / 2, 0.0f, 1.0f }));
-			actor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Gravity)->setVelocity(V4{ 0.001f, 0.0f, 0.0f });
-			actor->addComponent<SphereColliderComponent>();
-			actor->getComponent<PhysicsComponent>()->setMass(i + numSpheres);
-			actor->getComponent<PhysicsComponent>()->setRestitution(0.99f);
-			spheres.push_back(actor);
-		}		
-
 		mainLoop();
 
 		floorModel.unload();
-		sphererModel.unload();
 		tableModel.unload();
 
 		renderer.deinit();
@@ -147,6 +120,7 @@ private:
 	{
 		auto tlast = std::chrono::high_resolution_clock::now();
 		float minFrameTime = std::numeric_limits<float>::max();
+	
 		while (!glfwWindowShouldClose(window))
 		{
 			auto tnow = std::chrono::high_resolution_clock::now();
@@ -156,7 +130,7 @@ private:
 			minFrameTime = frameTime < minFrameTime ? frameTime : minFrameTime;
 
 			glfwPollEvents();
-
+			
 			scene.getTransformComponent().setTransform(Mtx::translate({ 0.0f, 2.0f, 0.0f }));
 			physics.update(scene, frameTime);
 			scene.tick(frameTime);

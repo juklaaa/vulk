@@ -34,13 +34,15 @@ struct UBO
 constexpr uint NUM_BONES = 32u;
 struct AnimUBO : UBO
 {
-	glm::vec3 initialPoseBonePositions[NUM_BONES];
-	glm::quat initialPoseBoneRotations[NUM_BONES];
-	glm::vec3 initialPoseBoneScales[NUM_BONES];
+	glm::vec2 padding;
+
+	glm::vec4 initialPoseBonePositions[NUM_BONES];
+	glm::vec4 initialPoseBoneRotations[NUM_BONES];
+	glm::vec4 initialPoseBoneScales[NUM_BONES];
 	
-	glm::vec3 poseBonePositions[NUM_BONES];
-	glm::quat poseBoneRotations[NUM_BONES];
-	glm::vec3 poseBoneScales[NUM_BONES];
+	glm::vec4 poseBonePositions[NUM_BONES];
+	glm::vec4 poseBoneRotations[NUM_BONES];
+	glm::vec4 poseBoneScales[NUM_BONES];
 };
 
 struct SceneDataForUniforms
@@ -272,7 +274,7 @@ struct AnimPipeline : public MainPipeline<AnimUBO>
 		FillPosePSR(ubo.poseBonePositions, ubo.poseBoneRotations, ubo.poseBoneScales, sceneData.frame);
 	}
 	
-	void FillPosePSR(glm::vec3* positions, glm::quat* rotations, glm::vec3* scales, const SkelAnimation::Frame* frame)
+	void FillPosePSR(glm::vec4* positions, glm::vec4* rotations, glm::vec4* scales, const SkelAnimation::Frame* frame)
 	{
 		if (!frame)
 			return;
@@ -280,9 +282,9 @@ struct AnimPipeline : public MainPipeline<AnimUBO>
 		int i = 0;
 		for (auto& bone : frame->bones)
 		{
-			positions[i] = glm::vec3(bone.position.x, bone.position.y, bone.position.z);
-			rotations[i] = glm::quat(bone.rotation.x, bone.rotation.y, bone.rotation.z, bone.rotation.w);
-			scales[i] = glm::vec3(bone.size.x, bone.size.y, bone.size.z);
+			positions[i] = glm::vec4(bone.position.x, bone.position.y, bone.position.z, 0.0f);
+			rotations[i] = glm::vec4(bone.rotation.x, bone.rotation.y, bone.rotation.z, bone.rotation.w);
+			scales[i] = glm::vec4(bone.size.x, bone.size.y, bone.size.z, 0.0f);
 			++i;
 			assert(i < NUM_BONES);
 		}	

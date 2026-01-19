@@ -25,7 +25,7 @@ public:
 		V3 normal;
 		V3 tangent;
 		
-		uchar boneIndices[4];
+		uint boneIndices[4];
 		V4 weights = V4::zero();
 	};
 

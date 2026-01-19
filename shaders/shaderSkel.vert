@@ -11,14 +11,16 @@ layout(binding = 0) uniform UniformBufferObject
 	vec3 modelColor;
 	float modelLightReflection;
 	float textured;
+
+    vec2 padding;
     
-    vec3 initialBonePos[NUM_BONES];
+    vec4 initialBonePos[NUM_BONES];
     vec4 initialBoneRot[NUM_BONES];
-    vec3 initialBoneScale[NUM_BONES];
+    vec4 initialBoneScale[NUM_BONES];
     
-    vec3 bonePos[NUM_BONES];
+    vec4 bonePos[NUM_BONES];
     vec4 boneRot[NUM_BONES];
-    vec3 boneScale[NUM_BONES];
+    vec4 boneScale[NUM_BONES];
 } ubo;
     
 layout(location = 0) in vec3 inPosition;
@@ -54,11 +56,11 @@ void main()
 
     vec3 radiusesToBone[4];
     for (int i = 0; i < 4; ++i)
-        radiusesToBone[i] = inPosition - ubo.initialBonePos[boneIndices[i]];
+        radiusesToBone[i] = inPosition - ubo.initialBonePos[boneIndices[i]].xyz;
 
     vec3 posFromBones = vec3(0.0f);
     for (int i = 0; i < 4; ++i)
-        posFromBones += inBoneWeights[i] * (ubo.bonePos[boneIndices[i]] + radiusesToBone[i]);
+        posFromBones += inBoneWeights[i] * (ubo.bonePos[boneIndices[i]].xyz + radiusesToBone[i]);
     
      //fragColor = vec3( inBoneIndices.x / 32.0, inBoneIndices.y / 32.0, inBoneIndices.z / 32.0);
     

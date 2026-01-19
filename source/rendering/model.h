@@ -20,7 +20,7 @@ struct Vertex
 	glm::vec3 normal;	
 	glm::vec3 tangent = glm::vec3(0.0f);
 	
-	glm::u8vec4 weightIndices = glm::u8vec4(0u);
+	glm::uvec4 weightIndices = glm::uvec4(0u);
 	glm::vec4 weights = glm::vec4(0.0f);
 
 	static VkVertexInputBindingDescription getBindingDescription()
@@ -37,7 +37,7 @@ struct Vertex
 	{
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-		VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT,  VK_FORMAT_R32G32B32_SFLOAT,  VK_FORMAT_R8G8B8A8_UINT, VK_FORMAT_R32G32B32A32_SFLOAT };
+		VkFormat formats[] = { VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT,  VK_FORMAT_R32G32B32_SFLOAT,  VK_FORMAT_R32G32B32A32_UINT, VK_FORMAT_R32G32B32A32_SFLOAT };
 		uint32_t offsets[] = { offsetof(Vertex, pos), offsetof(Vertex, color), offsetof(Vertex, texCoord), offsetof(Vertex, normal), offsetof(Vertex, tangent),offsetof(Vertex, weightIndices), offsetof(Vertex, weights)};
 
 		for (int i = 0; i < numAttributes; ++i)
