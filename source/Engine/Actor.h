@@ -6,7 +6,7 @@
 
 class Scene;
 
-class Actor
+class Actor 
 {
 public:
 
