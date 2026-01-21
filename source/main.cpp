@@ -15,6 +15,7 @@
 #include "Animation/Mesh.h"
 #include "Engine/Scene.h"
 #include "Engine/Log.h"
+#include "Engine/Test/TestObject.h"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -25,6 +26,8 @@ public:
 
 	void run()
 	{
+		testTestObject();
+		
 		Logger::getSingleton().init();
 		initWindow();
 		renderer.init(window);
