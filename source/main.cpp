@@ -34,8 +34,8 @@ public:
 
 
 		std::string meshPath = "models/tree.iqm";
+		//meshPath = "models/clock.iqm";
 		meshPath = "models/test.iqm";
-		//meshPath = "models/test1.iqm";
 		Skeleton skeleton;
 		skeleton.load(meshPath);
 		Animations animations;
@@ -97,6 +97,8 @@ private:
 		glfwSetWindowUserPointer(window, this);
 		glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 		glfwSetKeyCallback(window, keyCallback);
+		glfwSetCursorPosCallback(window, cursorPosCallback);
+		glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
@@ -113,6 +115,18 @@ private:
 			app->isPPLightingEnabled = !app->isPPLightingEnabled;
 		}
 	}
+	
+	static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+	{
+		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
+			app->sceneRotationZ += 0.01f*(xpos - app->lastCursorPos.x);
+		app->lastCursorPos = V2{ (float)xpos, (float)ypos };
+	}
+	
+	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+	{
+	}
 
 	void deinitWindow()
 	{
@@ -125,7 +139,6 @@ private:
 		auto tlast = std::chrono::high_resolution_clock::now();
 		float minFrameTime = std::numeric_limits<float>::max();
 		
-		
 		while (!glfwWindowShouldClose(window))
 		{
 			auto tnow = std::chrono::high_resolution_clock::now();
@@ -136,7 +149,7 @@ private:
 
 			glfwPollEvents();
 			
-			scene.getTransformComponent().setTransform(Mtx::translate({ 0.0f, 2.0f, 0.0f }));
+			scene.getTransformComponent().setTransform(Mtx::translate({ 0.0f, 2.0f, 0.0f }) * Mtx::rotate({0.0f, 0.0f, sceneRotationZ}));
 			physics.update(scene, frameTime);
 			scene.tick(frameTime);
 			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
@@ -154,6 +167,8 @@ private:
 
 	bool framebufferResized = false;
 	bool isPPLightingEnabled = true;
+	float sceneRotationZ = 0.0f;
+	V2 lastCursorPos;
 };
 
 int main()

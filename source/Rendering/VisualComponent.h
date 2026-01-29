@@ -24,9 +24,9 @@ public:
 	int getLightReflection() const { return lightReflection; }
 	void setLightReflection(int powerOfTwo) { lightReflection = powerOfTwo; }
 	
-	glm::vec3 getColor() const { return color;}
-	void setColor(glm::vec3 color_) { color = color_; }
-	void setColor(float r, float g, float b) { color = glm::vec3(r,g,b); }
+	glm::vec4 getColor() const { return color;}
+	void setColor(glm::vec4 color_) { color = color_; }
+	void setColor(float r, float g, float b) { color = glm::vec4(r,g,b, 1.0f); }
 
 	bool isTextured() const { return textured;}
 
@@ -34,7 +34,7 @@ private:
 	const Texture* texture = nullptr;
 	const Texture* normalMap = nullptr;
 	
-	glm::vec3 color = { 1.0f, 1.0f, 1.0f };
+	glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	int lightReflection = 0;
 	bool textured = false;
 };

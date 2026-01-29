@@ -14,9 +14,11 @@ layout(binding = 0) uniform UniformBufferObject
 	mat4 proj;
 	mat4 depthMVP;
 	vec4 light;
-	vec3 modelColor;
+	vec4 modelColor;
 	float modelLightReflection;
 	float textured;
+    float padding1;
+    float padding2;
 } ubo;
 
 layout(binding = 1) uniform sampler2D texSampler;
