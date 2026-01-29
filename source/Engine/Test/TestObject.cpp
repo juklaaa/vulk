@@ -37,8 +37,7 @@ void testTestObject()
 	
 	for (auto field : newObject->getClass()->fields)
 	{
-		std::cout << field->name << " = " << field->toString(newObject) << std::endl;
-		//log(x, Verbose, "{} = {}", field->name, field->toString(newObject));
+		log(x, Verbose, "{} = {}", field->name, field->toString(newObject));
 	}
 	
 	delete newObject;

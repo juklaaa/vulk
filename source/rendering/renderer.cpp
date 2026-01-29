@@ -26,16 +26,16 @@ struct UBO
 	glm::mat4 proj;
 	glm::mat4 depthMVP;
 	glm::vec4 light;
-	glm::vec3 modelColor;
+	glm::vec4 modelColor;
 	float modelLightReflection;
 	float textured;
+	float padding1;
+	float padding2;
 };
 
 constexpr uint NUM_BONES = 32u;
 struct AnimUBO : UBO
 {
-	glm::vec2 padding;
-
 	glm::vec4 initialPoseBonePositions[NUM_BONES];
 	glm::vec4 initialPoseBoneRotations[NUM_BONES];
 	glm::vec4 initialPoseBoneScales[NUM_BONES];
@@ -89,7 +89,7 @@ struct MainPipeline : public Pipeline<UBO_Type>
 		}
 		else
 		{
-			ubo.modelColor = glm::vec3(1.0f, 1.0f, 1.0f);
+			ubo.modelColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 			ubo.modelLightReflection = 0;
 			ubo.textured = 1;
 		}
@@ -278,6 +278,9 @@ struct AnimPipeline : public MainPipeline<AnimUBO>
 	{
 		if (!frame)
 			return;
+		
+		for (int i = 0; i < NUM_BONES; ++i)
+			rotations[i] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		
 		int i = 0;
 		for (auto& bone : frame->bones)

@@ -16,7 +16,7 @@ struct Logger
 	template <typename... Types>
 	void writeLog(LogSeverity severity, const char* filename, int lineNumber, const std::format_string<Types...> fmt, Types&&... args)
 	{
-		std::string line = std::format("{}({},1): {}", filename, lineNumber, std::format(fmt, args...));
+		std::string line = std::format("{}({},1): {}", filename, lineNumber, std::format(fmt, std::forward<Types>(args)...));
 		writeString(severity, line);
 	}
 

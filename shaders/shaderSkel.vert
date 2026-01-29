@@ -8,11 +8,11 @@ layout(binding = 0) uniform UniformBufferObject
 	mat4 proj;
 	mat4 depthMVP;
 	vec4 light;
-	vec3 modelColor;
+	vec4 modelColor;
 	float modelLightReflection;
 	float textured;
-
-    vec2 padding;
+    float padding1;
+    float padding2;
     
     vec4 initialBonePos[NUM_BONES];
     vec4 initialBoneRot[NUM_BONES];
@@ -96,7 +96,7 @@ void main()
 {   
     fragLight = ubo.light.xyz;
     fragTexCoord = inTexCoord;
-    fragColor=ubo.modelColor;
+    fragColor=ubo.modelColor.xyz;
 
 
     vec3 finalBoneTransform = vec3(0.0f);
@@ -110,10 +110,11 @@ void main()
         
         vec3 rot = rotateVectorByQuat(localPos,inversQuat(initBoneRot));        
         rot = rotateVectorByQuat(rot,boneRot);      
+        //rot = inPosition + vec3(0.0f, 0.0f, ubo.boneRot[ind].z);
 
         vec3 transform = rot + ubo.bonePos[ind].xyz;
 
-        finalBoneTransform+= inBoneWeights[i] * transform;
+        finalBoneTransform += inBoneWeights[i] * transform;
     }
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(finalBoneTransform, 1.0f);

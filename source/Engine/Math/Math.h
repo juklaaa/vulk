@@ -416,7 +416,7 @@ struct Quat
 	
 	V4 rotate(const V4& v) const
 	{
-		return (inversed() * (*this * Quat(v))).toVec();
+		return (inversed() * (Quat(v) * (*this))).toVec();
 	}
 	
 	Quat operator * (const Quat& q) const

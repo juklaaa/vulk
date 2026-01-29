@@ -7,9 +7,11 @@ layout(binding = 0) uniform UniformBufferObject
 	mat4 proj;
 	mat4 depthMVP;
 	vec4 light;
-	vec3 modelColor;
+	vec4 modelColor;
 	float modelLightReflection;
 	float textured;
+    float padding1;
+    float padding2;
 } ubo;
 
 /*layout(push_constant) uniform constants
@@ -42,7 +44,7 @@ void main()
     fragLight = ubo.light.xyz;
     fragTexCoord = inTexCoord;
 
-    fragColor = ubo.modelColor;
+    fragColor = ubo.modelColor.xyz;
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0f);
     fragLightCamPosition = biasMat * ubo.depthMVP * vec4(inPosition, 1.0f);
