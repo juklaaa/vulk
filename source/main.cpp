@@ -34,7 +34,8 @@ public:
 
 
 		std::string meshPath = "models/tree.iqm";
-		meshPath = "models/test1.iqm";
+		meshPath = "models/test.iqm";
+		//meshPath = "models/test1.iqm";
 		Skeleton skeleton;
 		skeleton.load(meshPath);
 		Animations animations;
@@ -73,7 +74,7 @@ public:
 		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
 		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
 		tableActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
-		tableActor->getTransformComponent().setTransform(Mtx::scale({0.5f, 0.5f, 0.5f}) * Mtx::translate({0.0f, 0.0f, 0.0f}));
+		tableActor->getTransformComponent().setTransform(Mtx::scale({0.5f, 0.5f, 0.5f}) * Mtx::translate({0.0f, 0.0f, -1.0f}));
 		
 		mainLoop();
 
@@ -123,7 +124,8 @@ private:
 	{
 		auto tlast = std::chrono::high_resolution_clock::now();
 		float minFrameTime = std::numeric_limits<float>::max();
-	
+		
+		
 		while (!glfwWindowShouldClose(window))
 		{
 			auto tnow = std::chrono::high_resolution_clock::now();

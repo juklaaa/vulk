@@ -88,6 +88,7 @@
     <None Include="shaders\offscreenshader.vert" />
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
+    <None Include="shaders\shaderSkel.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Animation\Mesh.h" />

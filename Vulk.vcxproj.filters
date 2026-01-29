@@ -33,6 +33,9 @@
     <None Include="shaders\offscreenshader.vert">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="shaders\shaderSkel.vert">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Common.h">
@@ -92,6 +95,9 @@
     <ClInclude Include="source\Animation\Mesh.h">
       <Filter>Source Files\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="source\Engine\Core\Class.h" />
+    <ClInclude Include="source\Engine\Core\Object.h" />
+    <ClInclude Include="source\Engine\Test\TestObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -144,6 +150,18 @@
     </ClCompile>
     <ClCompile Include="source\Animation\Mesh.cpp">
       <Filter>Source Files\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Core\Class.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Core\Object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Test\TestObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Rendering\VisualComponent.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
