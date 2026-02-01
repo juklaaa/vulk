@@ -16,9 +16,25 @@
 #include "Engine/Scene.h"
 #include "Engine/Log.h"
 #include "Engine/Test/TestObject.h"
+#include "Console/Console.h"
+#include "Console/ConsoleFunction.h"
+#include "Console/GlobalVar.h"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+
+GlobalVar<float> gTestVar("testVar", 1.0f);
+std::string testConsoleFunc(std::vector<std::string> args)
+{
+	if (args.size() != 2)
+		return "Usage: testConsoleFunc <int value 1> <int value 2>";
+	
+	int a = std::stoi(args[0]);
+	int b = std::stoi(args[1]);
+	
+	return std::to_string(a + b);
+}
+ConsoleFunction testConsoleFunc_Wrapper("testConsoleFunc", testConsoleFunc);
 
 class Application
 {
@@ -26,12 +42,13 @@ public:
 
 	void run()
 	{
+		console.run();
+		
 		testTestObject();
 		
-		Logger::getSingleton().init();
+		Logger::getSingleton().init(&console);
 		initWindow();
 		renderer.init(window);
-
 
 		std::string meshPath = "models/tree.iqm";
 		//meshPath = "models/clock.iqm";
@@ -83,6 +100,7 @@ public:
 
 		renderer.deinit();
 		deinitWindow();
+		console.stop();
 	}
 
 private:
@@ -149,6 +167,8 @@ private:
 
 			glfwPollEvents();
 			
+			console.processOnMainThread();
+			
 			scene.getTransformComponent().setTransform(Mtx::translate({ 0.0f, 2.0f, 0.0f }) * Mtx::rotate({0.0f, 0.0f, sceneRotationZ}));
 			physics.update(scene, frameTime);
 			scene.tick(frameTime);
@@ -162,6 +182,7 @@ private:
 	GLFWwindow* window = nullptr;
 	Renderer renderer;
 	PhysicsSystem physics;
+	Console console;
 
 	Scene scene;
 
