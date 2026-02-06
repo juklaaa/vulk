@@ -116,7 +116,7 @@ std::vector<Mesh> Mesh::loadiqm(std::string_view filepath)
 	}
 
 	
-	log(x, Verbose, "Read meshes");
+	logLine(x, Verbose, "Read meshes");
 	return result;
 }
 

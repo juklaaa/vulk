@@ -47,9 +47,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)source;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)source;$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -95,10 +101,14 @@
     <ClInclude Include="source\Animation\SkelAnimation.h" />
     <ClInclude Include="source\Animation\Skeleton.h" />
     <ClInclude Include="source\Common.h" />
+    <ClInclude Include="source\Console\Console.h" />
+    <ClInclude Include="source\Console\ConsoleFunction.h" />
+    <ClInclude Include="source\Console\GlobalVar.h" />
     <ClInclude Include="source\Engine\Actor.h" />
     <ClInclude Include="source\Engine\Component.h" />
     <ClInclude Include="source\Engine\Core\Class.h" />
     <ClInclude Include="source\Engine\Core\Object.h" />
+    <ClInclude Include="source\Engine\Core\SerializeObject.h" />
     <ClInclude Include="source\Engine\Log.h" />
     <ClInclude Include="source\Engine\Math\Math.h" />
     <ClInclude Include="source\Engine\Scene.h" />
@@ -118,10 +128,14 @@
     <ClCompile Include="source\Animation\Mesh.cpp" />
     <ClCompile Include="source\Animation\SkelAnimation.cpp" />
     <ClCompile Include="source\Animation\Skeleton.cpp" />
+    <ClCompile Include="source\Console\Console.cpp" />
+    <ClCompile Include="source\Console\ConsoleFunction.cpp" />
+    <ClCompile Include="source\Console\GlobalVar.cpp" />
     <ClCompile Include="source\Engine\Actor.cpp" />
     <ClCompile Include="source\Engine\Component.cpp" />
     <ClCompile Include="source\Engine\Core\Class.cpp" />
     <ClCompile Include="source\Engine\Core\Object.cpp" />
+    <ClCompile Include="source\Engine\Core\SerializeObject.cpp" />
     <ClCompile Include="source\Engine\Log.cpp" />
     <ClCompile Include="source\Engine\Math\Math.cpp" />
     <ClCompile Include="source\Engine\Scene.cpp" />

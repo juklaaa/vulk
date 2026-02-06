@@ -22,5 +22,5 @@ void Skeleton::load(std::string_view filename)
 			bones.emplace_back(joint.parent >= 0 ? &bones[joint.parent] : nullptr);
 		}
 	}
-	log(x, Verbose, "Read a Skeleton");
+	logLine(x, Verbose, "Read a Skeleton");
 }

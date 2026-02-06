@@ -10,7 +10,7 @@ struct Logger
 {
 	static Logger& getSingleton();
 
-	void init();
+	void init(class Console* console);
 	void writeString(LogSeverity severity, std::string_view str);
 
 	template <typename... Types>
@@ -21,7 +21,8 @@ struct Logger
 	}
 
 	std::ofstream file;
+	Console* console;
 };
 
-#define log(cat, severity, ...) \
+#define logLine(cat, severity, ...) \
 Logger::getSingleton().writeLog(severity, __FILE__, __LINE__, __VA_ARGS__);

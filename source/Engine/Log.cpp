@@ -1,6 +1,6 @@
 #include "Log.h"
 #include "Common.h"
-#include "Windows.h"
+#include "Console/Console.h"
 
 Logger& Logger::getSingleton()
 {
@@ -8,21 +8,15 @@ Logger& Logger::getSingleton()
 	return logger;
 }
 
-void Logger::init()
+void Logger::init(Console* consoleIn)
 {
+	console = consoleIn;
 	file.open("log.txt");
 }
 
 void Logger::writeString(LogSeverity severity, std::string_view str)
 {
-	if (severity == LogSeverity::Error ||
-		severity == LogSeverity::Warning)
-	{
-		std::cerr << str << std::endl;
-	}
-	else
-		std::cout << str << std::endl;
-	OutputDebugStringA(str.data());
-	OutputDebugStringA("\n");
+	if (console)
+		console->print(str);
 	file << str << std::endl;
 }
