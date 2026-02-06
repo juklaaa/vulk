@@ -24,5 +24,5 @@ struct Logger
 	Console* console;
 };
 
-#define log(cat, severity, ...) \
+#define logLine(cat, severity, ...) \
 Logger::getSingleton().writeLog(severity, __FILE__, __LINE__, __VA_ARGS__);

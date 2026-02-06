@@ -108,6 +108,7 @@
     <ClInclude Include="source\Engine\Component.h" />
     <ClInclude Include="source\Engine\Core\Class.h" />
     <ClInclude Include="source\Engine\Core\Object.h" />
+    <ClInclude Include="source\Engine\Core\SerializeObject.h" />
     <ClInclude Include="source\Engine\Log.h" />
     <ClInclude Include="source\Engine\Math\Math.h" />
     <ClInclude Include="source\Engine\Scene.h" />
@@ -134,6 +135,7 @@
     <ClCompile Include="source\Engine\Component.cpp" />
     <ClCompile Include="source\Engine\Core\Class.cpp" />
     <ClCompile Include="source\Engine\Core\Object.cpp" />
+    <ClCompile Include="source\Engine\Core\SerializeObject.cpp" />
     <ClCompile Include="source\Engine\Log.cpp" />
     <ClCompile Include="source\Engine\Math\Math.cpp" />
     <ClCompile Include="source\Engine\Scene.cpp" />

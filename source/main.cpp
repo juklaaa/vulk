@@ -43,10 +43,10 @@ public:
 	void run()
 	{
 		console.run();
+		Logger::getSingleton().init(&console);
 		
 		testTestObject();
 		
-		Logger::getSingleton().init(&console);
 		initWindow();
 		renderer.init(window);
 

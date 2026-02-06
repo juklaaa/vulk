@@ -14,6 +14,7 @@
 #include <set>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <math.h>
 #include <numbers>
@@ -29,3 +30,4 @@
 using uint = unsigned int;
 using ushort = unsigned short;
 using uchar = unsigned char;
+using uint64 = uint64_t;

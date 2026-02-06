@@ -679,7 +679,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RendererImpl::debugCallback(
 	if (pCallbackData->flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		severity = LogSeverity::Error;
 	
-	log(Vulkan, severity, "{}", pCallbackData->pMessage);
+	logLine(Vulkan, severity, "{}", pCallbackData->pMessage);
 
 	int size = strnlen(pCallbackData->pMessage, 2048);
 	size += 1;
