@@ -121,7 +121,7 @@ void SkelAnimation::Frame::convertToRootSpace(const Skeleton& skeleton)
 			auto& parentBone = bones[parentIndex];
 			
 			bone.position = parentBone.position + parentBone.rotation.rotate(bone.position);
-			bone.rotation = parentBone.rotation * bone.rotation;
+			bone.rotation = bone.rotation * parentBone.rotation;
 			//TODO: scale
 		}
 	});
