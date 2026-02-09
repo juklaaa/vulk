@@ -1,6 +1,6 @@
 #version 450
     
-const int NUM_BONES = 32;
+const int NUM_BONES = 64;
 layout(binding = 0) uniform UniformBufferObject 
 {   
     mat4 model;

@@ -50,16 +50,6 @@ public:
 		initWindow();
 		renderer.init(window);
 
-		std::string meshPath = "models/tree.iqm";
-		//meshPath = "models/clock.iqm";
-		meshPath = "models/test.iqm";
-		Skeleton skeleton;
-		skeleton.load(meshPath);
-		Animations animations;
-		SkelAnimation::load(meshPath, animations);
-		animations.convertToRootSpace(skeleton);
-		auto meshes = Mesh::loadiqm(meshPath);
-
 		//floor
 		Material floorMaterial;
 		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
@@ -79,24 +69,31 @@ public:
 		floorActor->getComponent<VisualComponent>()->setMaterial(&floorMaterial);
 		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
 
-		//table
-		Material tableMaterial;
-		tableMaterial.setColor(0.9f, 0.9f, 0.2f);
-		Model tableModel;
-		//tableModel.generateCube(&renderer, 1);
-		tableModel.setMesh(&renderer, &meshes[0]);
-		auto tableActor = scene.addActor();
-		tableActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Heavy);// ->setAngularVelocity({ 0.0f, 1.0f, 0.0f, 0.001f });
-		tableActor->addComponent<BoxColliderComponent>();
-		tableActor->addComponent<VisualComponent>()->setModel(&tableModel);
-		tableActor->getComponent<VisualComponent>()->setMaterial(&tableMaterial);
-		tableActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
-		tableActor->getTransformComponent().setTransform(Mtx::scale({0.5f, 0.5f, 0.5f}) * Mtx::translate({0.0f, 0.0f, -1.0f}));
+		//cat
+		std::string meshPath = "models/cat.iqm";
+		Skeleton skeleton;
+		skeleton.load(meshPath);
+		Animations animations;
+		SkelAnimation::load(meshPath, animations);
+		animations.convertToRootSpace(skeleton);
+		auto meshes = Mesh::loadiqm(meshPath);
+		Texture catTexture;
+		catTexture.load(&renderer, "textures/cat.png");
+		Material catMaterial;
+		catMaterial.setTexture(&catTexture);
+		Model catModel;
+		catModel.setMesh(&renderer, &meshes[0]);
+		auto catActor = scene.addActor();
+		catActor->addComponent<VisualComponent>()->setModel(&catModel);
+		catActor->getComponent<VisualComponent>()->setMaterial(&catMaterial);
+		catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
+		catActor->getTransformComponent().setTransform(Mtx::scale({0.25f, 0.25f, 0.25f}) * Mtx::translate({0.0f, 0.0f, -1.0f}));
 		
 		mainLoop();
 
 		floorModel.unload();
-		tableModel.unload();
+		catModel.unload();
+		catTexture.unload();
 
 		renderer.deinit();
 		deinitWindow();
@@ -169,7 +166,7 @@ private:
 			
 			console.processOnMainThread();
 			
-			scene.getTransformComponent().setTransform(Mtx::translate({ 0.0f, 2.0f, 0.0f }) * Mtx::rotate({0.0f, 0.0f, sceneRotationZ}));
+			scene.getTransformComponent().setTransform(Mtx::rotate({0.0f, 0.0f, sceneRotationZ}));
 			physics.update(scene, frameTime);
 			scene.tick(frameTime);
 			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);

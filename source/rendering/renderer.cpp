@@ -33,7 +33,7 @@ struct UBO
 	float padding2;
 };
 
-constexpr uint NUM_BONES = 32u;
+constexpr uint NUM_BONES = 64u;
 struct AnimUBO : UBO
 {
 	glm::vec4 initialPoseBonePositions[NUM_BONES];
