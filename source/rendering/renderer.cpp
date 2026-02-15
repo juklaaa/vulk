@@ -466,16 +466,16 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		glm::mat4 model;
 		static_assert(sizeof(Mtx) == sizeof(glm::mat4));
 		memcpy(&model, &worldTransform, sizeof(Mtx));
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
+		glm::mat4 view = glm::lookAt(cameraPos, cameraLookAt, glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 20.0f);
 
 		proj[1][1] *= -1;
 
 		glm::vec3 light = glm::vec3(-5.0f, -3.0f, 5.0f);
 
-		float orthoSize = 4.0f;
+		float orthoSize = 10.0f;
 		float nearPlane = 0.1f;
-		float farPlane = 10.0f;
+		float farPlane = 20.0f;
 
 		glm::vec3 lightDir = glm::normalize(light);
 		glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));

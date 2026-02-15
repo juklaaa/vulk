@@ -50,6 +50,10 @@ public:
 
 	virtual void tick(float dt);
 
+
+	bool getIsPlayer() { return isPlayer; }
+	void setIsPlayer(bool b) { isPlayer = b; }
+
 protected:
 
 private:
@@ -59,4 +63,7 @@ private:
 	Scene* scene = nullptr;
 	TransformComponent transformComponent;
 	std::vector<Component*> components;
+
+
+	bool isPlayer = false;
 };
