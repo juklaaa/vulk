@@ -92,6 +92,7 @@
   <ItemGroup>
     <None Include="shaders\offscreenshader.frag" />
     <None Include="shaders\offscreenshader.vert" />
+    <None Include="shaders\offscreenSkel.vert" />
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
     <None Include="shaders\shaderSkel.vert" />

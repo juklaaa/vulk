@@ -1,0 +1,42 @@
+{
+    "address": 1003586835696,
+    "class": "TestObject",
+    "myBool": "0",
+    "myFloat": "-50",
+    "myInt": "42",
+    "myTestObject": {
+        "address": 1003586835808,
+        "class": "TestObject2",
+        "myBool": "1",
+        "myFloat": "2137",
+        "myInt": "100",
+        "myObjects": [
+            1003586835696,
+            1003586835808,
+            {
+                "address": 1003586836048,
+                "class": "TestObject",
+                "myBool": "1",
+                "myFloat": "-50",
+                "myInt": "100",
+                "myTestObject": null,
+                "strBase": "I'm a test object #3"
+            }
+        ],
+        "myTestObject": 1003586835696,
+        "str": "Hello World",
+        "strBase": "TestObject2",
+        "vecI": [
+            "1",
+            "2",
+            "3"
+        ],
+        "vecS": [
+            "My",
+            "vector",
+            "of",
+            "strings!"
+        ]
+    },
+    "strBase": "TestObject"
+}

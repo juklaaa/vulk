@@ -23,18 +23,28 @@
     <Filter Include="Source Files\Importers">
       <UniqueIdentifier>{c7c8ef73-314a-4925-af61-4ccd61002956}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Rendering\shaders">
+      <UniqueIdentifier>{7eef49a8-4684-4ee1-a851-67c0e753f306}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\shader.frag" />
-    <None Include="shaders\shader.vert" />
     <None Include="shaders\offscreenshader.frag">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering\shaders</Filter>
     </None>
     <None Include="shaders\offscreenshader.vert">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering\shaders</Filter>
     </None>
     <None Include="shaders\shaderSkel.vert">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Rendering\shaders</Filter>
+    </None>
+    <None Include="shaders\shader.frag">
+      <Filter>Source Files\Rendering\shaders</Filter>
+    </None>
+    <None Include="shaders\shader.vert">
+      <Filter>Source Files\Rendering\shaders</Filter>
+    </None>
+    <None Include="shaders\offscreenSkel.vert">
+      <Filter>Source Files\Rendering\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -98,6 +108,10 @@
     <ClInclude Include="source\Engine\Core\Class.h" />
     <ClInclude Include="source\Engine\Core\Object.h" />
     <ClInclude Include="source\Engine\Test\TestObject.h" />
+    <ClInclude Include="source\Console\Console.h" />
+    <ClInclude Include="source\Console\ConsoleFunction.h" />
+    <ClInclude Include="source\Console\GlobalVar.h" />
+    <ClInclude Include="source\Engine\Core\SerializeObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -161,6 +175,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\Rendering\VisualComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Console\Console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Console\ConsoleFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Console\GlobalVar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Engine\Core\SerializeObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -93,6 +93,7 @@ private:
 	std::unique_ptr<PipelineBase> pipeline;
 	std::unique_ptr<PipelineBase> animPipeline;
 	std::unique_ptr<PipelineBase> offscreenPipeline;
+	std::unique_ptr<PipelineBase> animOffscreenPipeline;
 	
 	uint32_t mipLevels;
 	bool isPPLightingEnabled = true;

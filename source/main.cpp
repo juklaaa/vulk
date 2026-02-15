@@ -87,7 +87,7 @@ public:
 		catActor->addComponent<VisualComponent>()->setModel(&catModel);
 		catActor->getComponent<VisualComponent>()->setMaterial(&catMaterial);
 		catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
-		catActor->getTransformComponent().setTransform(Mtx::scale({ 0.25f, 0.25f, 0.25f }) * Mtx::translate({ 0.0f, 0.0f, -1.1f }));
+		catActor->getTransformComponent().setTransform(Mtx::scale({ 0.25f, 0.25f, 0.25f }) * Mtx::translate({ 0.0f, 0.0f, -1.25f }));
 
 		catActor->setIsPlayer(true);
 		
