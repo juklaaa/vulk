@@ -118,9 +118,9 @@ void main()
     }
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(finalBoneTransform, 1.0f);
-    fragLightCamPosition = biasMat * ubo.depthMVP * vec4(inPosition, 1.0f);
+    fragLightCamPosition = biasMat * ubo.depthMVP * vec4(finalBoneTransform, 1.0f);
 
-    vec3 Positon = (ubo.model * vec4(inPosition, 1.0f)).xyz;
+    vec3 Positon = (ubo.model * vec4(finalBoneTransform, 1.0f)).xyz;
     vec3 CameraPosition = inverse(ubo.view)[3].xyz;
     fragViewDir = normalize(CameraPosition - Positon.xyz);    
 
