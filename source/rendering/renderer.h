@@ -73,6 +73,11 @@ public:
 	Texture texture;
 	Texture normalMap;
 	VkSampler textureSampler;
+
+
+	glm::vec3 cameraPos = glm::vec3(0.0f, -5.0f, 3.0f);
+	glm::vec3 cameraLookAt = glm::vec3(0.0f, 0.0f, 0.0f);
+
 private:
 
 	friend class RendererImpl;
@@ -88,6 +93,7 @@ private:
 	std::unique_ptr<PipelineBase> pipeline;
 	std::unique_ptr<PipelineBase> animPipeline;
 	std::unique_ptr<PipelineBase> offscreenPipeline;
+	std::unique_ptr<PipelineBase> animOffscreenPipeline;
 	
 	uint32_t mipLevels;
 	bool isPPLightingEnabled = true;

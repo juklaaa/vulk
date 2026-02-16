@@ -45,6 +45,17 @@ struct AnimUBO : UBO
 	glm::vec4 poseBoneScales[NUM_BONES];
 };
 
+struct AnimOffscreenUBO : OffscreenUBO
+{
+	glm::vec4 initialPoseBonePositions[NUM_BONES];
+	glm::vec4 initialPoseBoneRotations[NUM_BONES];
+	glm::vec4 initialPoseBoneScales[NUM_BONES];
+
+	glm::vec4 poseBonePositions[NUM_BONES];
+	glm::vec4 poseBoneRotations[NUM_BONES];
+	glm::vec4 poseBoneScales[NUM_BONES];
+};
+
 struct SceneDataForUniforms
 {
 	glm::mat4 model;
@@ -389,6 +400,125 @@ struct OffscreenPipeline : public Pipeline<OffscreenUBO>
 	}
 };
 
+struct AnimOffscreenPipeline : public Pipeline<AnimOffscreenUBO>
+{
+	virtual void fillUBO(const void* sceneDataRaw, void* uboRaw) override
+	{
+		const SceneDataForUniforms& sceneData = *reinterpret_cast<const SceneDataForUniforms*>(sceneDataRaw);
+		AnimOffscreenUBO& ubo = *reinterpret_cast<AnimOffscreenUBO*>(uboRaw);
+		ubo.MVP = sceneData.offscreenMVP;
+
+		FillPosePSR(ubo.initialPoseBonePositions, ubo.initialPoseBoneRotations, ubo.initialPoseBoneScales, sceneData.initialFrame);
+		FillPosePSR(ubo.poseBonePositions, ubo.poseBoneRotations, ubo.poseBoneScales, sceneData.frame);
+	}
+
+	void FillPosePSR(glm::vec4* positions, glm::vec4* rotations, glm::vec4* scales, const SkelAnimation::Frame* frame)
+	{
+		if (!frame)
+			return;
+
+		for (int i = 0; i < NUM_BONES; ++i)
+			rotations[i] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+		int i = 0;
+		for (auto& bone : frame->bones)
+		{
+			positions[i] = glm::vec4(bone.position.x, bone.position.y, bone.position.z, 0.0f);
+			rotations[i] = glm::vec4(bone.rotation.x, bone.rotation.y, bone.rotation.z, bone.rotation.w);
+			scales[i] = glm::vec4(bone.size.x, bone.size.y, bone.size.z, 0.0f);
+			++i;
+			assert(i < NUM_BONES);
+		}
+	}
+
+	virtual void createDescriptorSetLayout() override
+	{
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.pImmutableSamplers = nullptr;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = 1;
+		layoutInfo.pBindings = &uboLayoutBinding;
+
+		if (vkCreateDescriptorSetLayout(getDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	virtual void createDescriptorPool(int maxNumVisuals) override
+	{
+		VkDescriptorPoolSize poolSize{};
+		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSize.descriptorCount = maxNumVisuals * getNumFramesInFlight();
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = 1;
+		poolInfo.pPoolSizes = &poolSize;
+		poolInfo.maxSets = maxNumVisuals * getNumFramesInFlight();
+
+		if (vkCreateDescriptorPool(getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+	}
+
+	virtual void createDescriptorSets(int numVisuals, int currentImage, const std::vector<VisualComponent*>& visualComponents) override
+	{
+		if (numVisuals_DescriptorSets[currentImage] == numVisuals)
+			return;
+
+		auto& set = descriptorSets[currentImage];
+		if (!set.empty())
+			vkFreeDescriptorSets(getDevice(), descriptorPool, set.size(), set.data());
+
+		numVisuals_DescriptorSets[currentImage] = numVisuals;
+
+		uint32_t numDescriptorSets = numVisuals;
+
+		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, descriptorSetLayout);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(numDescriptorSets);
+		allocInfo.pSetLayouts = layouts.data();
+
+		set.resize(numDescriptorSets);
+		if (vkAllocateDescriptorSets(getDevice(), &allocInfo, set.data()) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+
+		for (size_t i = 0; i < numDescriptorSets; i++)
+		{
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = uniformBuffers[currentImage][i];
+			bufferInfo.offset = 0;
+			bufferInfo.range = getUBOSize();
+
+			std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+
+			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet = set[i];
+			descriptorWrites[0].dstBinding = 0;
+			descriptorWrites[0].dstArrayElement = 0;
+			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[0].descriptorCount = 1;
+			descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+			vkUpdateDescriptorSets(getDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		}
+	}
+
+};
+
+
 void Renderer::init(GLFWwindow* window)
 {
 	impl.init(this, window);
@@ -403,6 +533,8 @@ void Renderer::init(GLFWwindow* window)
 	animPipeline->init(this, "anim", "nmap", impl.renderPass, impl.msaaSamples, 7);
 	offscreenPipeline = std::make_unique<OffscreenPipeline>();
 	offscreenPipeline->init(this, "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 1);
+	animOffscreenPipeline = std::make_unique<AnimOffscreenPipeline>();
+	animOffscreenPipeline->init(this, "animOffscreen", "offscreen", impl.shadowmapRenderPass, VK_SAMPLE_COUNT_1_BIT, 7);
 }
 
 void Renderer::deinit()
@@ -412,6 +544,7 @@ void Renderer::deinit()
 	pipeline->deinit();
 	animPipeline->deinit();
 	offscreenPipeline->deinit();
+	animOffscreenPipeline->deinit();
 
 	texture.unload();
 	normalMap.unload();
@@ -466,16 +599,16 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 		glm::mat4 model;
 		static_assert(sizeof(Mtx) == sizeof(glm::mat4));
 		memcpy(&model, &worldTransform, sizeof(Mtx));
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -5.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 10.0f);
+		glm::mat4 view = glm::lookAt(cameraPos, cameraLookAt, glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), getImpl().swapChainExtent.width / (float)getImpl().swapChainExtent.height, 0.1f, 20.0f);
 
 		proj[1][1] *= -1;
 
 		glm::vec3 light = glm::vec3(-5.0f, -3.0f, 5.0f);
 
-		float orthoSize = 4.0f;
+		float orthoSize = 10.0f;
 		float nearPlane = 0.1f;
-		float farPlane = 10.0f;
+		float farPlane = 20.0f;
 
 		glm::vec3 lightDir = glm::normalize(light);
 		glm::mat4 lightView = glm::lookAt(lightDir * 5.0f, glm::vec3(0.0f), glm::vec3(0, 0, 1));
@@ -506,6 +639,10 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 	offscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
 	offscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
 	offscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
+
+	animOffscreenPipeline->createUniformBuffers(visualComponents.size(), currentImage);
+	animOffscreenPipeline->createDescriptorSets(visualComponents.size(), currentImage, visualComponents);
+	animOffscreenPipeline->updateUniformBuffer(currentImage, sceneDatas.data(), visualComponents.size());
 }
 
 void Renderer::waitUntilDone()
@@ -556,8 +693,6 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->graphicsPipeline);
-
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -574,13 +709,23 @@ void Renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t swapc
 
 		for (int i = 0; i < visualComponents.size(); ++i)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
-
 			auto vis = visualComponents[i];
-
-			PushConstants constants;
-			constants.isPPLightingEnabled = isPPLightingEnabled;
-			vkCmdPushConstants(commandBuffer, pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+			if (!vis->getInitialAnimationFrame())
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->graphicsPipeline);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, offscreenPipeline->pipelineLayout, 0, 1, &offscreenPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
+				PushConstants constants;
+				constants.isPPLightingEnabled = isPPLightingEnabled;
+				vkCmdPushConstants(commandBuffer, offscreenPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+			}
+			else
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animOffscreenPipeline->graphicsPipeline);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, animOffscreenPipeline->pipelineLayout, 0, 1, &animOffscreenPipeline->descriptorSets[impl.currentFrame][i], 0, nullptr);
+				PushConstants constants;
+				constants.isPPLightingEnabled = isPPLightingEnabled;
+				vkCmdPushConstants(commandBuffer, animOffscreenPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &constants);
+			}
 
 			VkBuffer vertexBuffers[] = { vis->getModel()->getVertexBuffer() };
 			VkDeviceSize offsets[] = { 0 };

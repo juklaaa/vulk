@@ -6,4 +6,6 @@ glslc.exe offscreenshader.frag -o offscreen_f.spv
 
 glslc.exe shaderSkel.vert -o anim_v.spv
 
+glslc.exe offscreenSkel.vert -o animOffscreen_v.spv
+
 pause
