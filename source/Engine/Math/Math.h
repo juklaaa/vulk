@@ -46,7 +46,7 @@ struct V4
 	float dist2(const V4& v) { return (*this - v).length2(); }
 	float dist(const V4& v) { return (*this - v).length(); }
 
-	V4 normalize() 
+	V4 normalize() const
 	{
 		float l = length(); 
 		if(l!=0)
@@ -372,6 +372,11 @@ struct Mtx
 			rows[2] / scale,
 			{0.0f, 0.0f, 0.0f, 1.0f}
 		};
+	}
+	
+	V4 getForward() const
+	{
+		return (V4{-1.0f, 0.0f, 0.0f} * *this).normalize();
 	}
 
 	V4 rows[4];

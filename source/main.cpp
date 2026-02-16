@@ -83,13 +83,11 @@ public:
 		catMaterial.setTexture(&catTexture);
 		Model catModel;
 		catModel.setMesh(&renderer, &meshes[0]);
-		auto catActor = scene.addActor();
+		catActor = scene.addActor();
 		catActor->addComponent<VisualComponent>()->setModel(&catModel);
 		catActor->getComponent<VisualComponent>()->setMaterial(&catMaterial);
 		catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
 		catActor->getTransformComponent().setTransform(Mtx::scale({ 0.25f, 0.25f, 0.25f }) * Mtx::translate({ 0.0f, 0.0f, -1.25f }));
-
-		catActor->setIsPlayer(true);
 		
 		mainLoop();
 
@@ -134,41 +132,41 @@ private:
 
 		if (key == GLFW_KEY_W && action == GLFW_PRESS)
 		{
-			app->playerTransform = 0.1f;
+			app->playerInputForward = 0.1f;
 		}
 		if (key == GLFW_KEY_W && action == GLFW_RELEASE)
 		{
-			app->playerTransform = 0.0f;
+			app->playerInputForward = 0.0f;
 		}
 
 		if (key == GLFW_KEY_S && action == GLFW_PRESS)
 		{
-			app->playerTransform = -0.1f;
+			app->playerInputForward = -0.1f;
 		}
 
 		if (key == GLFW_KEY_S && action == GLFW_RELEASE)
 		{
-			app->playerTransform = 0.0f;
+			app->playerInputForward = 0.0f;
 		}
 
 		if (key == GLFW_KEY_A && action == GLFW_PRESS)
 		{
-			app->playerRotationZ = -0.03f;
+			app->playerInputRight = -0.1f;
 		}
 
 		if (key == GLFW_KEY_A && action == GLFW_RELEASE)
 		{
-			app->playerRotationZ = 0.0f;
+			app->playerInputRight = 0.0f;
 		}
 
 		if (key == GLFW_KEY_D && action == GLFW_PRESS)
 		{
-			app->playerRotationZ = 0.03f;
+			app->playerInputRight = 0.1f;
 		}
 
 		if (key == GLFW_KEY_D && action == GLFW_RELEASE)
 		{
-			app->playerRotationZ = 0.0f;
+			app->playerInputRight = 0.0f;
 		}
 	}
 	
@@ -176,7 +174,9 @@ private:
 	{
 		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
-			app->sceneRotationZ += 0.01f*(xpos - app->lastCursorPos.x);
+			app->playerRotationZ = 0.001f*(xpos - app->lastCursorPos.x);
+		else
+			app->playerRotationZ = 0.0f;
 		app->lastCursorPos = V2{ (float)xpos, (float)ypos };
 	}
 	
@@ -207,31 +207,32 @@ private:
 			
 			console.processOnMainThread();
 			
-			//scene.getTransformComponent().setTransform(Mtx::rotate({0.0f, 0.0f, sceneRotationZ}));
-
-
-			auto actors = scene.getActors();
-			for (auto a : actors)
+			if (catActor)
 			{
-				if (a->getIsPlayer())
+				auto catTransform = catActor->getTransformComponent().getTransform();
+				
+				if (playerInputForward != 0.0f || playerInputRight != 0.0f)
 				{
-					auto m = a->getTransformComponent().getTransform();
-					auto t = Mtx::translate(V4{ -playerTransform,0.0f,0.0f}* Mtx::rotate({ 0.0f,0.0f,playerRotationZ }));
-					a->getTransformComponent().setTransform(t * Mtx::rotate({ 0.0f,0.0f,playerRotationZ }) * m);
-					
-					auto player = a->getTransformComponent().getTransform();
-					V4 playerPos = player.getPosition();
-					
-					float camDist = 5.0f;
-					
-					sceneRotationZ -= playerRotationZ;
-					glm::vec3 camOffset(cos(sceneRotationZ) * camDist, sin(sceneRotationZ) * camDist, 4.0f);
-					renderer.cameraLookAt = glm::vec3(playerPos.x, playerPos.y, playerPos.z);
-					renderer.cameraPos = renderer.cameraLookAt + camOffset;
-
-					
+					auto catPos = catTransform.getPosition();
+					if (playerInputForward < 0.0f)
+						catTransform = cameraTransform.getRotation() * Mtx::rotate({0.0f, 0.0f, PI});
+					else
+						catTransform = cameraTransform.getRotation() * Mtx::rotate({0.0f, 0.0f, glm::sign(playerInputRight) * PI/2});
+					catTransform = Mtx::scale({0.25f, 0.25f, 0.25f}) * catTransform;
+					catTransform = catTransform * Mtx::translate(catPos);
 				}
+				auto playerInput = playerInputForward != 0.0f ? fabs(playerInputForward) : fabs(playerInputRight);
+				catTransform = catTransform * Mtx::translate(catTransform.getForward() * 0.25f * frameTime * playerInput);
+				catActor->getTransformComponent().setTransform(catTransform);
+				
+				V4 playerPos = catTransform.getPosition();
+				
+				cameraTransform = cameraTransform * Mtx::rotate(V4{0.0f, 0.0f, frameTime * playerRotationZ});
+				renderer.cameraLookAt = glm::vec3(playerPos.x, playerPos.y, playerPos.z);
+				auto cameraWorldTransform = (cameraTransform * Mtx::translate(catTransform.getPosition())).getPosition();
+				renderer.cameraPos = glm::vec3(cameraWorldTransform.x, cameraWorldTransform.y, cameraWorldTransform.z);
 			}
+			
 			physics.update(scene, frameTime);
 			scene.tick(frameTime);
 			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
@@ -251,10 +252,12 @@ private:
 	bool framebufferResized = false;
 	bool isPPLightingEnabled = true;
 	float playerRotationZ = 0.0f;
-	float sceneRotationZ = 0.0f;
-	float playerTransform = 0.0f;
+	float playerInputForward = 0.0f;
+	float playerInputRight = 0.0f;
 	V2 lastCursorPos;
-};
+	Actor* catActor = nullptr;
+	Mtx cameraTransform = Mtx::translate({4.0f, 0.0f, 4.0f});
+ }; 
 
 int main()
 {

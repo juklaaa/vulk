@@ -3,11 +3,14 @@
 #include "Common.h"
 #include "Component.h"
 #include "TransformComponent.h"
+#include "Core/Class.h"
+#include "Core/Object.h"
 
 class Scene;
 
-class Actor 
+class Actor : public Object
 {
+	DECLARE_CLASS(Actor)
 public:
 
 	Actor();
