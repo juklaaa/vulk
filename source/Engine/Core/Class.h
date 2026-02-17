@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <cassert>
 #include <memory>
+#include <sstream>
 #include <unordered_map>
 #include <string>
 
@@ -113,8 +114,11 @@ struct SpecificField<std::string> : Field
 	}
 };
 
-template<>
-struct SpecificField<Object*> : Field
+template<typename T>
+concept ObjectPtr = std::is_convertible<T, Object*>::value;
+
+template<ObjectPtr T> 
+struct SpecificField<T> : Field
 {
 	virtual bool isObjectPtr() const override { return true; }
 };

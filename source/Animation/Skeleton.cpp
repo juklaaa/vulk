@@ -11,15 +11,15 @@ void Skeleton::load(std::string_view filename)
 	iqmheader header;
 	f.read(reinterpret_cast<char*>(&header), sizeof(header));
 
-	if (header.num_poses > 0 && header.ofs_poses > 0)
+	if (header.num_joints > 0 && header.ofs_joints > 0)
 	{
-		bones.reserve(header.num_poses);
-		f.seekg(header.ofs_poses);
-		for (uint i = 0; i < header.num_poses; ++i)
+		f.seekg(header.ofs_joints);
+		bones.resize(header.num_joints);
+		for (uint i = 0; i < header.num_joints; ++i)
 		{
-			iqmpose joint;
+			iqmjoint joint;
 			f.read(reinterpret_cast<char*>(&joint), sizeof(joint));
-			bones.emplace_back(joint.parent >= 0 ? &bones[joint.parent] : nullptr);
+			bones[i] = Bone{joint.parent >= 0 ? &bones[joint.parent] : nullptr};
 		}
 	}
 	logLine(x, Verbose, "Read a Skeleton");

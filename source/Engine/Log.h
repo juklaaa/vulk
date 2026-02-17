@@ -4,6 +4,8 @@
 #include <format>
 #include <string>
 
+#include "TypesText.h"
+
 enum LogSeverity { Error, Warning, Log, Verbose };
 
 struct Logger

@@ -1,5 +1,9 @@
 #include "Actor.h"
 
+DEFINE_CLASS(Actor, Object)
+	FIELD(std::vector<Component*>, components);
+}
+
 Actor::Actor()
 {
 	transformComponent.setActor(this);

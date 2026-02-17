@@ -1,9 +1,13 @@
 #pragma once
+#include "Core/Class.h"
+#include "Core/Object.h"
 
 class Actor;
 
-class Component
+class Component : public Object
 {
+	DECLARE_CLASS(Component)
+	
 public:
 
 	virtual ~Component() = default;
