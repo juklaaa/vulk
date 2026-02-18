@@ -26,6 +26,7 @@
 #include <mutex>
 #include <queue>
 #include <ranges>
+#include <random>
 
 using uint = unsigned int;
 using ushort = unsigned short;

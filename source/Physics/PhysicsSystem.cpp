@@ -78,6 +78,12 @@ void PhysicsSystem::update(Scene& scene, float dt)
 					auto physics2 = entity2.physics;
 
 					physics1->getActor()->getTransformComponent().setTransform(entity1_OriginalTransform);
+					while (auto nOpt2 = collided(entity1, entity2))
+					{
+						auto e1T = physics1->getActor()->getTransformComponent().getTransform();
+						e1T = e1T * Mtx::translate(0.5f * (physics2->getActor()->getTransformComponent().getWorldTransform().getPosition() - physics1->getActor()->getTransformComponent().getWorldTransform().getPosition()));
+						physics1->getActor()->getTransformComponent().setTransform(e1T);
+					}
 
 					float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
 
