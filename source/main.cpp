@@ -49,22 +49,23 @@ public:
 		
 		initWindow();
 		renderer.init(window);
+		memset(playerInputKeys, 0, sizeof(playerInputKeys));
 
 		//floor
 		Material floorMaterial;
 		floorMaterial.setColor( 0.0f, 0.7f, 0.2f );
 		Model floorModel;
 		Mesh planeMesh;
-		planeMesh.generatePlane(8);
+		planeMesh.generatePlane(32.0f);
 		floorModel.setMesh(&renderer,&planeMesh);
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,4.0f });//left wall
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,-4.0f });//right wall
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,4.0f });//back wall
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,-4.0f });//front wall
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,4.0f });//ceiling
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,16.0f });//left wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,-16.0f });//right wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,16.0f });//back wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,-16.0f });//front wall
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,16.0f });//ceiling
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
 		floorActor->getComponent<VisualComponent>()->setMaterial(&floorMaterial);
 		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
@@ -83,17 +84,44 @@ public:
 		catMaterial.setTexture(&catTexture);
 		Model catModel;
 		catModel.setMesh(&renderer, &meshes[0]);
+		Mesh boxMesh;
+		boxMesh.generateCube(1.0f);
+		catModel.setMesh(&renderer, &boxMesh);
 		catActor = scene.addActor();
-		catActor->addComponent<VisualComponent>()->setModel(&catModel);
-		catActor->getComponent<VisualComponent>()->setMaterial(&catMaterial);
-		catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
-		catActor->getTransformComponent().setTransform(Mtx::scale({ 0.25f, 0.25f, 0.25f }) * Mtx::translate({ 0.0f, 0.0f, -1.25f }));
+		catActor->addComponent<VisualComponent>()->setModel(&catModel)->setMaterial(&floorMaterial);
+		//catActor->getComponent<VisualComponent>()->setMaterial(&catMaterial);
+		
+		//catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
+		catActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.25f }));
+		catActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
+		catActor->addComponent<BoxColliderComponent>();//->setTransform(Mtx::scale({2.0f, 0.3f, 1.0f}));
+		
+		std::default_random_engine random_engine(1);
+		
+		// balls
+		const int numBalls = 16;
+		Mesh ballMesh;
+		ballMesh.generateSphere(0.5f);
+		Model ballModel;
+		ballModel.setMesh(&renderer, &ballMesh);
+		Material ballMaterial;
+		ballMaterial.setColor(1.0f, 0.8f, 0.05f);
+		for (int i = 0; i < numBalls; i++)
+		{
+			auto ballActor = scene.addActor();
+			ballActor->addComponent<VisualComponent>()->setModel(&ballModel)->setMaterial(&ballMaterial);
+			ballActor->addComponent<PhysicsComponent>()->setMass(1.0f)->setFlags(PhysicsComponent::Dynamic | PhysicsComponent::Gravity)->setRestitution(0.0f);
+			ballActor->addComponent<SphereColliderComponent>();
+			std::uniform_real_distribution d(-10.0f, 10.0f);
+			ballActor->getTransformComponent().setTransform(Mtx::translate({d(random_engine), d(random_engine), 4.0f}));
+		}
 		
 		mainLoop();
 
 		floorModel.unload();
 		catModel.unload();
 		catTexture.unload();
+		ballModel.unload();
 
 		renderer.deinit();
 		deinitWindow();
@@ -114,6 +142,7 @@ private:
 		glfwSetKeyCallback(window, keyCallback);
 		glfwSetCursorPosCallback(window, cursorPosCallback);
 		glfwSetMouseButtonCallback(window, mouseButtonCallback);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
@@ -125,59 +154,15 @@ private:
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-		{
-			app->isPPLightingEnabled = !app->isPPLightingEnabled;
-		}
-
-		if (key == GLFW_KEY_W && action == GLFW_PRESS)
-		{
-			app->playerInputForward = 0.1f;
-		}
-		if (key == GLFW_KEY_W && action == GLFW_RELEASE)
-		{
-			app->playerInputForward = 0.0f;
-		}
-
-		if (key == GLFW_KEY_S && action == GLFW_PRESS)
-		{
-			app->playerInputForward = -0.1f;
-		}
-
-		if (key == GLFW_KEY_S && action == GLFW_RELEASE)
-		{
-			app->playerInputForward = 0.0f;
-		}
-
-		if (key == GLFW_KEY_A && action == GLFW_PRESS)
-		{
-			app->playerInputRight = -0.1f;
-		}
-
-		if (key == GLFW_KEY_A && action == GLFW_RELEASE)
-		{
-			app->playerInputRight = 0.0f;
-		}
-
-		if (key == GLFW_KEY_D && action == GLFW_PRESS)
-		{
-			app->playerInputRight = 0.1f;
-		}
-
-		if (key == GLFW_KEY_D && action == GLFW_RELEASE)
-		{
-			app->playerInputRight = 0.0f;
-		}
+		app->playerInputKeys[key] = action == GLFW_PRESS;
 	}
 	
 	static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 	{
 		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
-			app->playerRotationZ = 0.001f*(xpos - app->lastCursorPos.x);
-		else
-			app->playerRotationZ = 0.0f;
-		app->lastCursorPos = V2{ (float)xpos, (float)ypos };
+		V2 mpos{(float)xpos, (float)ypos};
+		app->playerInputMouseDelta = mpos - app->lastCursorPos;
+		app->lastCursorPos = mpos;
 	}
 	
 	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -193,7 +178,6 @@ private:
 	void mainLoop()
 	{
 		auto tlast = std::chrono::high_resolution_clock::now();
-		float minFrameTime = std::numeric_limits<float>::max();
 		
 		while (!glfwWindowShouldClose(window))
 		{
@@ -201,44 +185,59 @@ private:
 			std::chrono::duration<float, std::milli> frameTimeDur = tnow - tlast;
 			tlast = tnow;
 			float frameTime = frameTimeDur.count();
-			minFrameTime = frameTime < minFrameTime ? frameTime : minFrameTime;
 
 			glfwPollEvents();
 			
 			console.processOnMainThread();
 			
+			V2 inputMotion{0.0f, 0.0f};
+			inputMotion += V2(1.0f, 0.0f) * (float)playerInputKeys[GLFW_KEY_D];
+			inputMotion += V2(-1.0f, 0.0f) * (float)playerInputKeys[GLFW_KEY_A];
+			inputMotion += V2(0.0f, 1.0f) * (float)playerInputKeys[GLFW_KEY_W];
+			inputMotion += V2(0.0f, -1.0f) * (float)playerInputKeys[GLFW_KEY_S];
+			inputMotion = inputMotion.normalize();
+			
 			if (catActor)
 			{
 				auto catTransform = catActor->getTransformComponent().getTransform();
+				const float catSpeed = 0.005f;
+				const float catRotateSpeed = 0.01f;
 				
-				if (playerInputForward != 0.0f || playerInputRight != 0.0f)
+				if (inputMotion.length2() > 0.0f)
 				{
-					auto catPos = catTransform.getPosition();
-					if (playerInputForward < 0.0f)
-						catTransform = cameraTransform.getRotation() * Mtx::rotate({0.0f, 0.0f, PI});
-					else
-						catTransform = cameraTransform.getRotation() * Mtx::rotate({0.0f, 0.0f, glm::sign(playerInputRight) * PI/2});
-					catTransform = Mtx::scale({0.25f, 0.25f, 0.25f}) * catTransform;
-					catTransform = catTransform * Mtx::translate(catPos);
+					V4 cameraForward2D = cameraTransform.getForward().multiply({1.0f, 1.0f, 0.0f}).normalize();
+					V4 catForward2D = catTransform.getForward().multiply({1.0f, 1.0f, 0.0f}).normalize();
+					V4 crossInput = V4{inputMotion}.cross(V4{0.0f, 1.0f, 0.0f});
+					Quat inputQuat = Quat(crossInput.x, crossInput.y, crossInput.z, inputMotion.dot({0.0f, 1.0f})).normalize();
+					V4 catDesiredForward2D = inputQuat.rotate(cameraForward2D).normalize();
+					logLine(x, Verbose, "cameraF {} catF {} catDF {} iQ [{} {} {} {}]", cameraForward2D, catForward2D, catDesiredForward2D, inputQuat.x, inputQuat.y, inputQuat.z, inputQuat.w);
+					
+					if (catForward2D.dot(catDesiredForward2D) < 0.9f)
+					{
+						float catRotateDir = glm::sign(catForward2D.cross(catDesiredForward2D).z);
+						//catTransform = catTransform * Mtx::rotate({0.0f, 0.0f, frameTime * catRotateDir * catRotateSpeed});
+					}
+					catTransform = catTransform * Mtx::translate(catTransform.getForward() * frameTime * catSpeed);
+					catActor->getTransformComponent().setTransform(catTransform);
 				}
-				auto playerInput = playerInputForward != 0.0f ? fabs(playerInputForward) : fabs(playerInputRight);
-				catTransform = catTransform * Mtx::translate(catTransform.getForward() * 0.25f * frameTime * playerInput);
-				catActor->getTransformComponent().setTransform(catTransform);
+			
+				cameraTransform = cameraTransform * Mtx::rotate(V4{0.0f, 0.0f, 0.01f * frameTime * playerInputMouseDelta.x});
+				cameraTransform = Mtx::rotate(V4{0.0f, 0.01f * frameTime * playerInputMouseDelta.y, 0.0f}) * cameraTransform;
+				auto orbitTransform = cameraTransform * Mtx::translate(cameraTransform.getForward() * -4.0f);
 				
 				V4 playerPos = catTransform.getPosition();
-				
-				cameraTransform = cameraTransform * Mtx::rotate(V4{0.0f, 0.0f, frameTime * playerRotationZ});
+				V4 cameraWorldPosition = playerPos + orbitTransform.getPosition();
+				logLine(x, Verbose, "catPos {} orbitPos {} cameraPos {}", playerPos, orbitTransform.getPosition(), cameraWorldPosition);
 				renderer.cameraLookAt = glm::vec3(playerPos.x, playerPos.y, playerPos.z);
-				auto cameraWorldTransform = (cameraTransform * Mtx::translate(catTransform.getPosition())).getPosition();
-				renderer.cameraPos = glm::vec3(cameraWorldTransform.x, cameraWorldTransform.y, cameraWorldTransform.z);
+				renderer.cameraPos = glm::vec3(cameraWorldPosition.x, cameraWorldPosition.y, cameraWorldPosition.z);
 			}
 			
 			physics.update(scene, frameTime);
 			scene.tick(frameTime);
-			renderer.drawFrame(scene, framebufferResized, isPPLightingEnabled);
+			renderer.drawFrame(scene, framebufferResized, true);
+			playerInputMouseDelta = V2{0.0f, 0.0f};
 		}
 
-		std::cout << "Min Frame Time: " << minFrameTime << std::endl;
 		renderer.waitUntilDone();
 	}
 
@@ -250,13 +249,13 @@ private:
 	Scene scene;
 
 	bool framebufferResized = false;
-	bool isPPLightingEnabled = true;
-	float playerRotationZ = 0.0f;
-	float playerInputForward = 0.0f;
-	float playerInputRight = 0.0f;
+	
 	V2 lastCursorPos;
+	bool playerInputKeys[GLFW_KEY_LAST];
+	V2 playerInputMouseDelta = V2{0.0f, 0.0f};
+	
 	Actor* catActor = nullptr;
-	Mtx cameraTransform = Mtx::translate({4.0f, 0.0f, 4.0f});
+	Mtx cameraTransform = Mtx::identity();
  }; 
 
 int main()

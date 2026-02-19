@@ -6,6 +6,7 @@
 #include <numbers>
 constexpr float PI = std::numbers::pi_v<float>;
 
+struct V2;
 
 struct V4
 {
@@ -14,6 +15,7 @@ struct V4
 		:x(x_), y(y_), z(z_), w(0) {}
 	V4(float x_, float y_, float z_, float w_)
 		:x(x_), y(y_), z(z_), w(w_) {}
+	explicit V4(const V2& v);
 	static V4 zero() { return V4{ 0.0f, 0.0f, 0.0f, 0.0f }; }
 
 	float& operator[] (int index)
@@ -53,6 +55,9 @@ struct V4
 			return{ x / l,y / l,z / l,w / l }; 
 		return { 0.0f,0.0f,0.0f,0.0f };
 	}
+	
+	V4 multiply(const V4& v) const { return { x * v.x,y * v.y,z * v.z,w * v.w }; }
+	V4 cross(const V4& v) const { return { y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x }; }
 
 	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
 	friend V4 operator * (float v, const V4& vec) { return vec * v; }
@@ -133,8 +138,10 @@ struct V2
 {
 	V2() = default;
 	V2(float x_, float y_)
-		:x(x_), y(y_){
-	}
+		: x(x_), y(y_)
+	{}
+	explicit V2(const V4& v) : x(v.x), y(v.y) {}
+	
 
 	static V2 zero() { return V2{ 0.0f, 0.0f}; }
 
@@ -184,6 +191,11 @@ struct V2
 	float x;
 	float y;
 };
+
+inline V4::V4(const V2& v)
+	: x(v.x), y(v.y), z(0.0f), w(0.0f)
+{
+}
 
 struct Mtx
 {
@@ -376,7 +388,7 @@ struct Mtx
 	
 	V4 getForward() const
 	{
-		return (V4{-1.0f, 0.0f, 0.0f} * *this).normalize();
+		return (V4{1.0f, 0.0f, 0.0f} * *this).normalize();
 	}
 
 	V4 rows[4];
@@ -443,6 +455,14 @@ struct Quat
 	V4 toVec() const
 	{
 		return {x, y, z, 0.0f};
+	}
+	
+	Quat normalize() const
+	{
+		float l = sqrt(x * x + y * y + z * z + w * w);
+		if (l > 0.0f)
+			return {x / l, y / l, z / l, w / l};
+		return identity();
 	}
 	
 

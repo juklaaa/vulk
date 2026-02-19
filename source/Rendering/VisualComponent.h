@@ -44,10 +44,10 @@ class VisualComponent : public Component
 public:
 
 	const Model* getModel() const { return model; }
-	void setModel(const Model* model_) { model = model_; }	
+	VisualComponent* setModel(const Model* model_) { model = model_; return this; }	
 
 	const Material* getMaterial() const { return material; }
-	void setMaterial(const Material* material_) { material = material_; }
+	VisualComponent* setMaterial(const Material* material_) { material = material_; return this; }
 	
 	void playAnimation(const SkelAnimation* animation, const SkelAnimation::Frame* initialFrame);
 	void stopAnimation();
