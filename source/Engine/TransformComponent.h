@@ -7,15 +7,11 @@ class TransformComponent : public Component
 {
 public:
 
-	const Mtx& getTransform() const;
-	void setTransform(const Mtx& transform);
-	const Mtx& getWorldTransform() const;
+	Mtx& accessTransform() { return transform; }
+	const Mtx& getTransform() const { return transform; }
+	void setTransform(const Mtx& transform) { this->transform = transform; }
 
 private:
 
-	void updateWorldTransform();
-
 	Mtx transform = Mtx::identity();
-	mutable Mtx worldTransform = Mtx::identity();
-	mutable bool dirty = true;
 };

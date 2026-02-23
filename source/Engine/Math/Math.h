@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <math.h>
 #include <stdexcept>
 #include <cassert>
@@ -59,6 +60,17 @@ struct V4
 	V4 multiply(const V4& v) const { return { x * v.x,y * v.y,z * v.z,w * v.w }; }
 	V4 cross(const V4& v) const { return { y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x }; }
 
+	V4 getOrthogonal() const
+	{
+		float ax = fabs(x);
+		float ay = fabs(y);
+		float az = fabs(z);
+		V4 other = ax < ay ? 
+		(ax < az ? V4{1.0f, 0.0f, 0.0f} : V4{0.0f, 0.0f, 1.0f}) : 
+		(ay < az ? V4{0.0f, 1.0f, 0.0f} : V4{0.0f, 0.0f, 1.0f});
+		return cross(other);
+	}
+	
 	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
 	friend V4 operator * (float v, const V4& vec) { return vec * v; }
 	V4 operator / (float v) const { return { x / v, y / v, z / v, w / v }; }
@@ -391,6 +403,7 @@ struct Mtx
 		return (V4{1.0f, 0.0f, 0.0f} * *this).normalize();
 	}
 
+	
 	V4 rows[4];
 };
 
@@ -465,6 +478,19 @@ struct Quat
 		return identity();
 	}
 	
+	static Quat from2Vecs(const V4& v1, const V4& v2)
+	{
+		float dot = v1.dot(v2);
+		float l = sqrt(v1.length2() * v2.length2());
+		if (dot / l == -1.0f)
+		{
+			return Quat(v1.getOrthogonal().normalize());
+		}
+		Quat q{v1.cross(v2)};
+		q.w = dot + l;
+		return q.normalize();
+	}
+	
 
 	float x;
 	float y;
@@ -474,3 +500,8 @@ struct Quat
 
 Quat MtxToQuat(const Mtx& m);
 Mtx QuatToMtx(const Quat& q);
+
+inline V4 clamp(const V4& v, const V4& min, const V4& max)
+{
+	return {std::clamp(v.x,min.x,max.x), std::clamp(v.y,min.y,max.y), std::clamp(v.z,min.z,max.z), std::clamp(v.w,min.w,max.w)};
+}

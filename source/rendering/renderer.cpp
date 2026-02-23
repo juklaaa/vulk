@@ -595,7 +595,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 
 	for (auto visual : visualComponents)
 	{
-		auto worldTransform = visual->getActor()->getTransformComponent().getWorldTransform();
+		auto worldTransform = visual->getActor()->getTransformComponent().getTransform();
 		glm::mat4 model;
 		static_assert(sizeof(Mtx) == sizeof(glm::mat4));
 		memcpy(&model, &worldTransform, sizeof(Mtx));

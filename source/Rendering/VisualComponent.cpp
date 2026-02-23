@@ -33,6 +33,6 @@ void VisualComponent::tick(float dt)
 {
     if (animation && isAnimationPlaying)
     {
-        time += dt;
+        time += dt * animationSpeed;
     }
 }
