@@ -26,88 +26,96 @@ void PhysicsSystem::update(Scene& scene, float dt)
 
 	for (auto& entity1 : entities)
 	{
-		Mtx entity1_OriginalTransform;
-		Mtx entity1_OriginalWorldTransform;
 		auto physics = entity1.physics;
-		if (physics->getFlags() & PhysicsComponent::Dynamic)
+		if (!(physics->getFlags() & PhysicsComponent::Dynamic))
+			continue;
+		
+		TransformComponent& tComp1 = physics->getActor()->getTransformComponent();
+		V4 velocity = physics->getVelocity();
+		if (physics->getFlags() & PhysicsComponent::Gravity)
 		{
-			TransformComponent& transformComponent = physics->getActor()->getTransformComponent();
-			V4 velocity = physics->getVelocity();
-			if (physics->getFlags() & PhysicsComponent::Gravity)
-			{
-				V4 acceleration = V4{ 0.0f, 0.0f,-0.0000025f };
-				velocity += acceleration * dt;
-			}
-			physics->setVelocity(velocity);
-			entity1_OriginalTransform = transformComponent.getTransform();
-			entity1_OriginalWorldTransform = transformComponent.getWorldTransform();
-			auto transform = entity1_OriginalTransform;
-			auto angularVelocity = physics->getAngularVelocity();
-			transform = transform * Mtx::translate(velocity * dt);
-			if (angularVelocity.w != 0.0f)
-			{
-				V4 pos = transform.getPosition();
-				transform = transform * Mtx::translate(pos * -1.0f);
-				transform = transform * Mtx::rotate(angularVelocity.xyz(), angularVelocity.w * dt);
-				transform = transform * Mtx::translate(pos);
-			}
-			transformComponent.setTransform(transform);
+			V4 acceleration = V4{ 0.0f, 0.0f,-0.0000025f };
+			velocity += acceleration * dt;
+		}
+		physics->setVelocity(velocity);
+		Mtx entity1_OriginalTransform = tComp1.getTransform();
+		auto transform = entity1_OriginalTransform;
+		auto angularVelocity = physics->getAngularVelocity();
+		transform = transform * Mtx::translate(velocity * dt);
+		if (angularVelocity.w != 0.0f)
+		{
+			V4 pos = transform.getPosition();
+			transform = transform * Mtx::translate(pos * -1.0f);
+			transform = transform * Mtx::rotate(angularVelocity.xyz(), angularVelocity.w * dt);
+			transform = transform * Mtx::translate(pos);
+		}
+		tComp1.setTransform(transform);
 
-			for (auto& entity2 : entities)
-			{
-				if (&entity1 == &entity2)
-					continue;
+		for (auto& entity2 : entities)
+		{
+			if (&entity1 == &entity2)
+				continue;
 
-				auto&& collided = [&entity1_OriginalWorldTransform](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
+			auto&& collided = [&entity1_OriginalTransform](PhysicsEntity& a, PhysicsEntity& b) -> std::optional<V4>
+			{
+				for (auto collider1 : a.colliders)
+					for (auto collider2 : b.colliders)
 					{
-						for (auto collider1 : a.colliders)
-							for (auto collider2 : b.colliders)
-							{
-								if (auto collision = collider1->intersects(*collider2, ColliderComponent::Context{ entity1_OriginalWorldTransform }))
-								{
-									return collision->normal;
-								}
-							}
-
-						return {};
-					};
-
-				if (auto nOpt = collided(entity1, entity2))
-				{
-					auto physics1 = entity1.physics;
-					auto physics2 = entity2.physics;
-
-					physics1->getActor()->getTransformComponent().setTransform(entity1_OriginalTransform);
-					while (auto nOpt2 = collided(entity1, entity2))
-					{
-						auto e1T = physics1->getActor()->getTransformComponent().getTransform();
-						e1T = e1T * Mtx::translate(0.5f * (physics2->getActor()->getTransformComponent().getWorldTransform().getPosition() - physics1->getActor()->getTransformComponent().getWorldTransform().getPosition()));
-						physics1->getActor()->getTransformComponent().setTransform(e1T);
+						if (auto collision = collider1->intersects(*collider2, 
+							ColliderComponent::Context{ entity1_OriginalTransform }))
+						{
+							return collision->normal;
+						}
 					}
 
-					float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
+				return {};
+			};
 
-					float invM1 = physics1->getFlags() & PhysicsComponent::Heavy ? 0.0f : 1.0f / physics1->getMass();
-					float invM2 = physics2->getFlags() & PhysicsComponent::Heavy ? 0.0f : 1.0f / physics2->getMass();
-					assert(invM1 + invM2 != 0.0f);
+			if (auto nOpt = collided(entity1, entity2))
+			{
+				auto physics1 = entity1.physics;
+				auto physics2 = entity2.physics;
+				V4 v1 = entity1.physics->getVelocity();
+				V4 v2 = entity2.physics->getVelocity();
+				auto& tComp2 = physics2->getActor()->getTransformComponent();
 
-					V4 v1 = entity1.physics->getVelocity();
-					V4 v2 = entity2.physics->getVelocity();
-
-					V4 n = nOpt.value();				
-
-					float j = (v1 - v2).dot(n) * (e + 1) / (n.dot(n) * (invM1 + invM2));
-
-					V4 newV1 = v1 - n * (j * invM1);
-					V4 newV2 = v2 + n * (j * invM2);
-
-					if (physics1->getFlags() & PhysicsComponent::Dynamic)
-						physics1->setVelocity(newV1);
-
-					if (physics2->getFlags() & PhysicsComponent::Dynamic)
-						physics2->setVelocity(newV2);
+				tComp1.setTransform(entity1_OriginalTransform);
+				if (!(entity2.physics->getFlags() & PhysicsComponent::Dynamic))
+				{
+					if (collided(entity1, entity2))
+					{
+						auto lastFrameE1 = lastFrameTransforms.find(entity1.physics);
+						auto lastFrameE2 = lastFrameTransforms.find(entity2.physics);
+						if (lastFrameE1 != lastFrameTransforms.end() && lastFrameE2 != lastFrameTransforms.end())
+						{
+							v2 = (tComp2.getTransform().getPosition() - lastFrameE2->second.getPosition()) / dt;
+							tComp1.setTransform(lastFrameE1->second);
+							tComp2.setTransform(lastFrameE2->second);
+						}
+					}
 				}
+
+				float e = (physics1->getRestitution() + physics2->getRestitution()) / 2;
+
+				float invM1 = physics1->getFlags() & PhysicsComponent::Heavy ? 0.0f : 1.0f / physics1->getMass();
+				float invM2 = physics2->getFlags() & PhysicsComponent::Heavy ? 0.0f : 1.0f / physics2->getMass();
+				assert(invM1 + invM2 != 0.0f);
+
+				V4 n = nOpt.value();				
+
+				float j = (v1 - v2).dot(n) * (e + 1) / (n.dot(n) * (invM1 + invM2));
+
+				V4 newV1 = v1 - n * (j * invM1);
+				V4 newV2 = v2 + n * (j * invM2);
+
+				if (physics1->getFlags() & PhysicsComponent::Dynamic)
+					physics1->setVelocity(newV1);
+
+				if (physics2->getFlags() & PhysicsComponent::Dynamic)
+					physics2->setVelocity(newV2);
 			}
 		}
 	}
+	for (auto& entity : entities)
+		lastFrameTransforms[entity.physics] = entity.physics->getActor()->getTransformComponent().getTransform();
 }

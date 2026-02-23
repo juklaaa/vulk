@@ -60,7 +60,7 @@ public:
 		floorModel.setMesh(&renderer,&planeMesh);
 		auto floorActor = scene.addActor();
 		floorActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
-		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,1.5f });//floor
+		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,0.0f });//floor
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,16.0f });//left wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 1.0f,0.0f,0.0f,-16.0f });//right wall
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,1.0f,0.0f,16.0f });//back wall
@@ -68,7 +68,6 @@ public:
 		floorActor->addComponent<PlaneColliderComponent>()->setEquation({ 0.0f,0.0f,1.0f,16.0f });//ceiling
 		floorActor->addComponent<VisualComponent>()->setModel(&floorModel);
 		floorActor->getComponent<VisualComponent>()->setMaterial(&floorMaterial);
-		floorActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.5f }));
 
 		//cat
 		std::string meshPath = "models/cat.iqm";
@@ -86,20 +85,19 @@ public:
 		catModel.setMesh(&renderer, &meshes[0]);
 		Mesh boxMesh;
 		boxMesh.generateCube(1.0f);
-		catModel.setMesh(&renderer, &boxMesh);
+		//catModel.setMesh(&renderer, &boxMesh);
 		catActor = scene.addActor();
-		catActor->addComponent<VisualComponent>()->setModel(&catModel)->setMaterial(&floorMaterial);
-		//catActor->getComponent<VisualComponent>()->setMaterial(&catMaterial);
+		catActor->addComponent<VisualComponent>()->setModel(&catModel)->setMaterial(&catMaterial);
 		
-		//catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
-		catActor->getTransformComponent().setTransform(Mtx::translate({ 0.0f, 0.0f, -1.25f }));
+		catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
+		catActor->getTransformComponent().setTransform(Mtx::scale(V4{0.25f, 0.25f, 0.25f}));
 		catActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
-		catActor->addComponent<BoxColliderComponent>();//->setTransform(Mtx::scale({2.0f, 0.3f, 1.0f}));
+		catActor->addComponent<SphereColliderComponent>();
 		
 		std::default_random_engine random_engine(1);
 		
 		// balls
-		const int numBalls = 16;
+		const int numBalls = 12;
 		Mesh ballMesh;
 		ballMesh.generateSphere(0.5f);
 		Model ballModel;
@@ -154,7 +152,7 @@ private:
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-		app->playerInputKeys[key] = action == GLFW_PRESS;
+		app->playerInputKeys[key] = (action == GLFW_PRESS || action == GLFW_REPEAT);
 	}
 	
 	static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
@@ -191,10 +189,10 @@ private:
 			console.processOnMainThread();
 			
 			V2 inputMotion{0.0f, 0.0f};
-			inputMotion += V2(1.0f, 0.0f) * (float)playerInputKeys[GLFW_KEY_D];
-			inputMotion += V2(-1.0f, 0.0f) * (float)playerInputKeys[GLFW_KEY_A];
-			inputMotion += V2(0.0f, 1.0f) * (float)playerInputKeys[GLFW_KEY_W];
-			inputMotion += V2(0.0f, -1.0f) * (float)playerInputKeys[GLFW_KEY_S];
+			inputMotion += V2(1.0f, 0.0f) * playerInputKeys[GLFW_KEY_D];
+			inputMotion += V2(-1.0f, 0.0f) * playerInputKeys[GLFW_KEY_A];
+			inputMotion += V2(0.0f, 1.0f) * playerInputKeys[GLFW_KEY_W];
+			inputMotion += V2(0.0f, -1.0f) * playerInputKeys[GLFW_KEY_S];
 			inputMotion = inputMotion.normalize();
 			
 			if (catActor)
@@ -205,31 +203,35 @@ private:
 				
 				if (inputMotion.length2() > 0.0f)
 				{
-					V4 cameraForward2D = cameraTransform.getForward().multiply({1.0f, 1.0f, 0.0f}).normalize();
+					V4 cameraForward2D = V4{cos(cameraAngles.x), sin(cameraAngles.x), 0.0f} * -1.0f;
 					V4 catForward2D = catTransform.getForward().multiply({1.0f, 1.0f, 0.0f}).normalize();
-					V4 crossInput = V4{inputMotion}.cross(V4{0.0f, 1.0f, 0.0f});
-					Quat inputQuat = Quat(crossInput.x, crossInput.y, crossInput.z, inputMotion.dot({0.0f, 1.0f})).normalize();
+					Quat inputQuat = Quat::from2Vecs(V4{0.0f, 1.0f, 0.0f}, V4{inputMotion});
+					if (inputMotion.dot({0.0f, 1.0f}) == -1.0f)
+						inputQuat = Quat(0.0f, 0.0f, 1.0f, 0.0f);
 					V4 catDesiredForward2D = inputQuat.rotate(cameraForward2D).normalize();
-					logLine(x, Verbose, "cameraF {} catF {} catDF {} iQ [{} {} {} {}]", cameraForward2D, catForward2D, catDesiredForward2D, inputQuat.x, inputQuat.y, inputQuat.z, inputQuat.w);
 					
-					if (catForward2D.dot(catDesiredForward2D) < 0.9f)
+					float dot = catForward2D.dot(catDesiredForward2D);
+					if (dot < 0.999f)
 					{
-						float catRotateDir = glm::sign(catForward2D.cross(catDesiredForward2D).z);
-						//catTransform = catTransform * Mtx::rotate({0.0f, 0.0f, frameTime * catRotateDir * catRotateSpeed});
+						float catRotateDir = -glm::sign(catForward2D.cross(catDesiredForward2D).z);
+						V4 catPos = catTransform.getPosition();
+						catTransform.rows[3] = {0.0f, 0.0f, 0.0f, 1.0f};
+						catTransform = catTransform * Mtx::rotate({0.0f, 0.0f, frameTime * catRotateDir * catRotateSpeed});
+						catTransform = catTransform * Mtx::translate(catPos);
 					}
 					catTransform = catTransform * Mtx::translate(catTransform.getForward() * frameTime * catSpeed);
 					catActor->getTransformComponent().setTransform(catTransform);
 				}
-			
-				cameraTransform = cameraTransform * Mtx::rotate(V4{0.0f, 0.0f, 0.01f * frameTime * playerInputMouseDelta.x});
-				cameraTransform = Mtx::rotate(V4{0.0f, 0.01f * frameTime * playerInputMouseDelta.y, 0.0f}) * cameraTransform;
-				auto orbitTransform = cameraTransform * Mtx::translate(cameraTransform.getForward() * -4.0f);
+				catActor->getComponent<VisualComponent>()->setAnimationSpeed(inputMotion.length());
 				
+				cameraAngles += V2{-playerInputMouseDelta.x, playerInputMouseDelta.y} * 0.001f;
+				cameraAngles.y = std::clamp(cameraAngles.y, 0.0f, 0.9f*PI/2);
+				V4 cameraPosition = V4{cos(cameraAngles.x)*cos(cameraAngles.y), sin(cameraAngles.x)*cos(cameraAngles.y), sin(cameraAngles.y)} * cameraRadius;
 				V4 playerPos = catTransform.getPosition();
-				V4 cameraWorldPosition = playerPos + orbitTransform.getPosition();
-				logLine(x, Verbose, "catPos {} orbitPos {} cameraPos {}", playerPos, orbitTransform.getPosition(), cameraWorldPosition);
+				cameraPosition += playerPos;
+				
 				renderer.cameraLookAt = glm::vec3(playerPos.x, playerPos.y, playerPos.z);
-				renderer.cameraPos = glm::vec3(cameraWorldPosition.x, cameraWorldPosition.y, cameraWorldPosition.z);
+				renderer.cameraPos = glm::vec3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 			}
 			
 			physics.update(scene, frameTime);
@@ -255,7 +257,8 @@ private:
 	V2 playerInputMouseDelta = V2{0.0f, 0.0f};
 	
 	Actor* catActor = nullptr;
-	Mtx cameraTransform = Mtx::identity();
+	V2 cameraAngles = V2{0.0f, 0.0f};
+	float cameraRadius = 5.0f;
  }; 
 
 int main()

@@ -51,6 +51,7 @@ public:
 	
 	void playAnimation(const SkelAnimation* animation, const SkelAnimation::Frame* initialFrame);
 	void stopAnimation();
+	void setAnimationSpeed(float speed) { animationSpeed = speed; }
 	const SkelAnimation::Frame* getAnimationFrame() const;
 	const SkelAnimation::Frame* getInitialAnimationFrame() const { return initialFrame; }
 	
@@ -64,4 +65,5 @@ private:
 	const SkelAnimation::Frame* initialFrame = nullptr;
 	float time = 0.0f;
 	bool isAnimationPlaying = false;
+	float animationSpeed = 1.0f;
 };

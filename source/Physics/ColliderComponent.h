@@ -34,8 +34,8 @@ public:
 
 	std::optional<Collision> intersects(ColliderComponent& other, std::optional<Context> context) const;
 	void setTransform(const Mtx& transform);
-	const Mtx& getTransform() const;
-	Mtx getWorldTransform() const;
+	const Mtx& getLocalTransform() const;
+	Mtx getTransform() const;
 
 protected:
 	Mtx transform = Mtx::identity();
