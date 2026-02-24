@@ -72,6 +72,7 @@ struct V4
 	}
 	
 	V4 operator * (float v) const { return { x * v, y * v, z * v, w * v }; }
+	V4 operator *= (float v) { x *= v; y *= v; z *= v; w *= v; return *this; }
 	friend V4 operator * (float v, const V4& vec) { return vec * v; }
 	V4 operator / (float v) const { return { x / v, y / v, z / v, w / v }; }
 	V4 operator + (const V4& v) const { return { x + v.x, y + v.y, z + v.z, w + v.w }; }
