@@ -44,7 +44,7 @@ std::optional<Collision> ColliderComponent::intersects(ColliderComponent& other,
 	return GeneralCollisionMediator::getSingleton().intersects(*this, other, std::move(context));
 }
 
-void ColliderComponent::setTransform(const Mtx& transform_)
+void ColliderComponent::setLocalTransform(const Mtx& transform_)
 {
 	transform = transform_;
 }
@@ -56,7 +56,7 @@ const Mtx& ColliderComponent::getLocalTransform() const
 
 Mtx ColliderComponent::getTransform() const
 {
-	return owner->getTransformComponent().getTransform() * transform;
+	return transform * owner->getTransformComponent().getTransform();
 }
 
 class SphereSphereCollisionMediator : public CollisionMediator
@@ -116,15 +116,20 @@ std::optional<Collision> GeneralCollisionMediator::intersects(const ColliderComp
 	// sort pair
 	const ColliderComponent* colliderA = &collider1;
 	const ColliderComponent* colliderB = &collider2;
+	bool swappedColliders = false;
 	if (colliderA->getType() > colliderB->getType())
 	{
 		std::swap(colliderA, colliderB);
+		swappedColliders = true;
 	}
 
 	auto mediatorIt = mediators.find({ colliderA->getType(), colliderB->getType() });
 	assert(mediatorIt != mediators.end());
 	CollisionMediator* mediator = mediatorIt->second;
-	return mediator->intersects(*colliderA, *colliderB, std::move(context));
+	auto collision = mediator->intersects(*colliderA, *colliderB, std::move(context));
+	if (collision && swappedColliders)
+		collision->normal *= -1.0f;
+	return collision;
 }
 
 std::optional<Collision> SphereSphereCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const
@@ -138,13 +143,11 @@ std::optional<Collision> SphereSphereCollisionMediator::intersects(const Collide
 
 	V4 c1 = cwt1.getPosition();
 	V4 c2 = cwt2.getPosition();
-
-	V4 diff = c1 - c2;
-	
-	if (diff.length() < r)
+	V4 dist = c2 - c1;
+	if (dist.length() < r)
 	{
-		V4 n = diff.normalize();
-		V4 p = c2 + n * r2;
+		V4 n = dist.normalize();
+		V4 p = c1 + n * r1;
 		return Collision{ p, n };
 	}
 	return{};
@@ -156,7 +159,7 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 	const BoxColliderComponent& box = static_cast<const BoxColliderComponent&>(collider2);
 	Mtx boxT = box.getTransform();
 	Mtx invBoxT = boxT.inversedTransform();
-	Mtx sphereT_Box = invBoxT * sphereT;
+	Mtx sphereT_Box = sphereT * invBoxT;
 	
 	AABB aabb
 	{
@@ -170,11 +173,47 @@ std::optional<Collision> SphereBoxCollisionMediator::intersects(const ColliderCo
 	if (d.length() < r) 
 	{
 		V4 pos_World = sphereCProj_Box * boxT;
-		V4 n = pos_World - sphereT.getPosition();
+		V4 n = (pos_World - sphereT.getPosition()).normalize();
 		return Collision{ pos_World, n };
 	}
 
 	return {};
+}
+
+#define TEST_SPHERE_VS_BOX \
+collision = GeneralCollisionMediator::getSingleton().intersects(sphereC, boxC, {}); \
+if (collision) \
+{ \
+	logLine(x, Verbose, "{} {}", collision->point, collision->normal); \
+} \
+else \
+{ \
+	logLine(x, Verbose, "no collision"); \
+}
+	
+void testSphereBoxCollisions()
+{
+	Actor sphereActor;
+	auto& sphereC = *sphereActor.addComponent<SphereColliderComponent>();
+	Actor boxActor;
+	auto& boxC = *boxActor.addComponent<BoxColliderComponent>();
+	Mtx& sphereT = sphereActor.getTransformComponent().accessTransform();
+	Mtx& boxT = boxActor.getTransformComponent().accessTransform();
+	
+	sphereT = Mtx::translate({-0.95f, 0.0f, 0.0f});
+	std::optional<Collision> collision;
+	if (false)
+	{
+		TEST_SPHERE_VS_BOX
+		boxT = Mtx::translate({1.0, 0.0f, 0.0f});
+		sphereT = Mtx::translate({1.95f, 0.0f, 0.0f});
+		TEST_SPHERE_VS_BOX
+		boxT = Mtx::scale({3.0, 1.0f, 1.0f});
+		TEST_SPHERE_VS_BOX
+	}
+	boxT = (Mtx::scale({1.0, 1.0f, 1.0f}) * Mtx::rotate({0.0f, 0.0f, -PI/4})) * Mtx::translate({4.0f, 0.0f, 0.0f});
+	sphereT = Mtx::translate({4.0f + 0.3f + 0.5f, 0.3f + 0.5f, 0.0f});
+	TEST_SPHERE_VS_BOX
 }
 
 std::optional<Collision> SpherePlaneCollisionMediator::intersects(const ColliderComponent& collider1, const ColliderComponent& collider2, std::optional<ColliderComponent::Context> context) const

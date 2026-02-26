@@ -46,6 +46,7 @@ public:
 		Logger::getSingleton().init(&console);
 		
 		testTestObject();
+		testSphereBoxCollisions();
 		
 		initWindow();
 		renderer.init(window);
@@ -83,16 +84,19 @@ public:
 		catMaterial.setTexture(&catTexture);
 		Model catModel;
 		catModel.setMesh(&renderer, &meshes[0]);
-		Mesh boxMesh;
-		boxMesh.generateCube(1.0f);
-		//catModel.setMesh(&renderer, &boxMesh);
+		Mesh catColliderMesh;
+		catColliderMesh.generateSphere(0.5f);
+		Model catColliderModel;
+		catColliderModel.setMesh(&renderer, &catColliderMesh);
+		Material catColliderMaterial;
+		catColliderMaterial.setColor(1.0f, 0.95f, 0.5f);
 		catActor = scene.addActor();
-		catActor->addComponent<VisualComponent>()->setModel(&catModel)->setMaterial(&catMaterial);
-		
-		catActor->getComponent<VisualComponent>()->playAnimation(&animations.animations[0], &animations.initialFrame);
+		catActor->addComponent<VisualComponent>()->setModel(&catModel)->setMaterial(&catMaterial)->playAnimation(&animations.animations[0], &animations.initialFrame);
+		Mtx colliderT = Mtx::scale({4.0f, 4.0f, 4.0f}) * Mtx::translate({1.5f, 0.0f, 1.5f});
+		//catActor->addComponent<VisualComponent>()->setModel(&catColliderModel)->setMaterial(&catColliderMaterial)->setLocalTransform(colliderT);
 		catActor->getTransformComponent().setTransform(Mtx::scale(V4{0.25f, 0.25f, 0.25f}));
 		catActor->addComponent<PhysicsComponent>()->setFlags(PhysicsComponent::Heavy);
-		catActor->addComponent<SphereColliderComponent>();
+		catActor->addComponent<SphereColliderComponent>()->setLocalTransform(colliderT);
 		
 		std::default_random_engine random_engine(1);
 		
@@ -120,6 +124,7 @@ public:
 		catModel.unload();
 		catTexture.unload();
 		ballModel.unload();
+		catColliderModel.unload();
 
 		renderer.deinit();
 		deinitWindow();

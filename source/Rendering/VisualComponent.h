@@ -11,6 +11,7 @@
 #include <glm/gtx/hash.hpp>
 
 #include "Animation/SkelAnimation.h"
+#include "Engine/Actor.h"
 
 class Material
 {
@@ -55,6 +56,10 @@ public:
 	const SkelAnimation::Frame* getAnimationFrame() const;
 	const SkelAnimation::Frame* getInitialAnimationFrame() const { return initialFrame; }
 	
+	void setLocalTransform(const Mtx& transform) { this->transform = transform; }
+	const Mtx& getLocalTransform() const { return transform; }
+	Mtx getTransform() const { return transform * owner->getTransformComponent().getTransform(); }
+	
 	virtual void tick(float dt) override;
 
 private:
@@ -66,4 +71,5 @@ private:
 	float time = 0.0f;
 	bool isAnimationPlaying = false;
 	float animationSpeed = 1.0f;
+	Mtx transform = Mtx::identity();
 };

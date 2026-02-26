@@ -200,7 +200,7 @@ struct MainPipeline : public Pipeline<UBO_Type>
 			bufferInfo.offset = 0;
 			bufferInfo.range = Pipeline<UBO_Type>::getUBOSize();
 
-			auto actorMaterial = visualComponents[i]->getActor()->getComponent<VisualComponent>()->getMaterial();
+			auto actorMaterial = visualComponents[i]->getMaterial();
 
 			VkDescriptorImageInfo imageInfo{};	
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -595,7 +595,7 @@ void Renderer::updateUniformBuffer(uint32_t currentImage, const std::vector<Visu
 
 	for (auto visual : visualComponents)
 	{
-		auto worldTransform = visual->getActor()->getTransformComponent().getTransform();
+		auto worldTransform = visual->getTransform();
 		glm::mat4 model;
 		static_assert(sizeof(Mtx) == sizeof(glm::mat4));
 		memcpy(&model, &worldTransform, sizeof(Mtx));
@@ -657,10 +657,8 @@ void Renderer::drawFrame(Scene& scene, bool framebufferResized, bool isPPLightin
 	std::vector<VisualComponent*> visualComponents;
 	scene.forAllActors([&visualComponents](Actor* actor)
 					   {
-						   if (auto visualComponent = actor->getComponent<VisualComponent>())
-						   {
-							   visualComponents.push_back(visualComponent);
-						   }
+						   auto actorVisualComponents = actor->getComponents<VisualComponent>();
+						   visualComponents.insert_range(visualComponents.end(), actorVisualComponents);
 					   });
 	impl.drawFrame(visualComponents, framebufferResized);
 }

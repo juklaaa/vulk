@@ -33,7 +33,7 @@ public:
 	};
 
 	std::optional<Collision> intersects(ColliderComponent& other, std::optional<Context> context) const;
-	void setTransform(const Mtx& transform);
+	void setLocalTransform(const Mtx& transform);
 	const Mtx& getLocalTransform() const;
 	Mtx getTransform() const;
 
@@ -78,3 +78,5 @@ struct RayIntersectResult
 	float t = 0.0f;
 };
 std::optional<RayIntersectResult> intersectRayAABB(const V4& point, const V4& dir, const AABB& aabb);
+
+void testSphereBoxCollisions();
